@@ -1,6 +1,6 @@
 # Einhorn-ABC – Entscheidungen
 
-Alle Festlegungen aus den Rückfragen, deinen Antworten und deinem Feedback (Stand: Version 4.2).
+Alle Festlegungen aus den Rückfragen, deinen Antworten und deinem Feedback (Stand: Version 4.3).
 
 ## Aus den Rückfragen (Antwort: „Alles okay“)
 
@@ -70,6 +70,19 @@ Alle Festlegungen aus den Rückfragen, deinen Antworten und deinem Feedback (Sta
 | English-Karte | Bild groß im Mittelpunkt, englische Schrift kleiner und etwas heller darunter, deutsche Bedeutung noch dezenter. (Ersetzt den früheren Vermerk „Das englische Wort bleibt groß“.) |
 | Spracherkennung | Typische Kinder-Varianten je Laut („ah“, „aha“, „äh“, „hey“, „oh“, „hm“, „mhm“, „pst“, „grr“ …) in CONFIG `lautVarianten`; gedehnte Formen werden automatisch erkannt. |
 | Einhorn | Unverändert (Zeichnung, Proportionen und Ausstattung je Menü). |
+
+## Aus deinem Feedback zu Version 4.2 (Version 4.3)
+
+| Thema | Entscheidung |
+|---|---|
+| Einhorn im Hauptmenü | Ein Tipp aufs Einhorn: es hüpft und sagt einen Satz mit seinem Namen, im Wechsel aus `einhornSaetze` in `einstellungen.js` („Ich bin Stella!“, „Hallo, ich bin Stella!“ …), nie zweimal derselbe hintereinander. Beim ersten Tipp nach dem Öffnen erklingt erst der Start-Jingle, dann der Satz. Der Jingle beim Antippen des Einhorns entfällt. |
+| Zurücksetzen | Zwei Knöpfe: **Einhorn neu kennenlernen** (Namensgebung vom ersten Start noch einmal; Berg, Trophäen, Training, eigene Karten und Einstellungen bleiben; mit 🏠 abbrechbar) unter Spiel und unter Sichern & Neu anfangen. **Alles zurücksetzen** (wie neu installiert, mit doppelter Rückfrage) unter Sichern & Neu anfangen. |
+| Berg-Videos | Stationen auf dem großen Berg sind antippbar und spielen ihre Szene mit Melodie und Ansage noch einmal ab. Nur erreichte Stationen; die anderen zeigen ein Schlösschen und wackeln beim Antippen. Nach der ersten ganzen Bergtour (Krone) sind alle frei. Ein Tipp auf das Einhorn am Berg spielt die Station, an der es gerade steht. Am Gipfel heißt es beim Wiederansehen „Wir sind über den Wolken! … trägt eine Krone!“ (ohne „neue Bergtour“). |
+| Szenen | Wald: dichter Wald mit drei Baumreihen hintereinander, Büschen, Pilzen, Eichhörnchen, Igel und Lichtstrahlen. Feld: neue Szene mit Sonne, Zaun, vielen Blumen, Schmetterlingen, Biene und Marienkäfer. |
+| Inhaltsdateien | Drei Dateien: `einstellungen.js` (bisher CONFIG, dazu alle Sätze des Einhorns), `inhalte-abc.js`, `inhalte-english.js`. Bearbeitbar auf GitHub im Browser. Die App lädt `index.html`, die Inhaltsdateien und `stimmen.json` immer zuerst frisch aus dem Netz (offline aus dem Speicher), darum muss `CACHE_VERSION` bei Inhaltsänderungen nicht erhöht werden. |
+| Fehler in Inhaltsdateien | Einzelne fehlerhafte Karten werden übersprungen. Ist eine Datei ganz kaputt, nimmt die App die zuletzt funktionierende Fassung (auf dem Gerät gesichert). Datei, Zeile und Fehler stehen unter Einstellungen › Bibliothek. Nur wenn es noch keine funktionierende Fassung gibt, erscheint eine Reparatur-Seite. |
+| Stimmen | Apple-Premium-Stimmen sind in Safari gesperrt. Deshalb aufgenommene freie KI-Stimmen, offline. Per Hörprobe gewählt: D3 Kerstin, D4 Dii, E2 Isabella, E6 Cori. Bei der Prüfung aller Aufnahmen mit einer Spracherkennung kamen Kerstins Einzelwörter verstümmelt heraus (zu kurz, kaum erkennbar); dafür kam Thorsten (D2) dazu, der bei Einzelwörtern am deutlichsten war. Ergebnis: Dii (voreingestellt) und Thorsten für Deutsch, Isabella (voreingestellt) und Cori für Englisch. Aufgenommen: alle Bildwörter, englischen Wörter und Sätze (auch langsam für 🐌), deutsche Bedeutungen, Lob, Stations- und Einhorn-Sätze mit den fünf Namensvorschlägen. Alles andere spricht die iPad-Stimme. Der Stumm-Modus des iPads wird für Töne und Aufnahmen übergangen. |
+| Version | 4.3 mit genau diesen Punkten. Anlaut-Detektiv und Memory bleiben für Version 5. |
 
 ## Für Version 5 ausgewählt (nach dem Test von V4)
 

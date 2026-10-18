@@ -1,0 +1,29 @@
+Einhorn-ABC – aufgenommene Stimmen
+==================================
+
+Die Dateien stimme-….bin enthalten Aufnahmen, die mit freien Sprachmodellen
+offline erzeugt wurden (Werkzeug: sherpa-onnx). Sie sind für die private,
+nicht-kommerzielle Nutzung in dieser Lern-App gedacht.
+
+Dii (Deutsch, weiblich)
+  Modell: OpenVoiceOS pipertts_de-DE_dii
+  Quelle: https://huggingface.co/OpenVoiceOS/pipertts_de-DE_dii
+  Lizenz: Creative Commons Namensnennung – Nicht kommerziell – Weitergabe unter
+          gleichen Bedingungen 4.0 International (CC BY-NC-SA 4.0)
+          https://creativecommons.org/licenses/by-nc-sa/4.0/
+          Kommerzielle Nutzung ist nicht erlaubt.
+
+Thorsten (Deutsch, männlich)
+  Modell: Piper-Stimme de_DE-thorsten-high (Thorsten-Voice)
+  Quelle: https://github.com/thorstenMueller/Thorsten-Voice
+  Lizenz: CC0 (gemeinfrei)
+
+Isabella (Englisch, britisch, weiblich)
+  Modell: Kokoro-82M, Stimme bf_isabella
+  Quelle: https://huggingface.co/hexgrad/Kokoro-82M
+  Lizenz: Apache License 2.0
+
+Cori (Englisch, britisch, weiblich)
+  Modell: Piper-Stimme en_GB-cori-high
+  Daten:  Aufnahmen von LibriVox (https://librivox.org), gemeinfrei
+  Lizenz: gemeinfrei (Public Domain)

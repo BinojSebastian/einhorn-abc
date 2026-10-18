@@ -2,21 +2,40 @@
 
 Lern-Web-App für Vorschulkinder (4–6 Jahre) mit zwei Spielen: **ABC** (Buchstaben, Laute, Silben) und **English** (Alltagswörter und kurze Sätze hören und nachsprechen). Ein Einhorn begleitet das Kind und steigt mit jeder Runde einen Berg hinauf.
 
-**Stand: Version 4.2** – natürlichere Vorlesestimme (Stimmhöhe 1,0, Tempo nah an normal), Menüs ohne Ansagen (stattdessen dezente Harfentöne), Glockenspiel-Jingle beim Start, eigene kleine Melodien für jede Belohnungsszene und jede Berg-Station, Bild und Buchstabe direkt antippbar, im Spiel English großes Bild mit dezenter Schrift, tolerantere Spracherkennung für Laute. Das Einhorn ist unverändert.
-
-Version 4: Einhorn im Sticker-Stil (je Menü mit eigener Ausstattung), App-Symbol, Einstellungen mit Untermenüs, English mit Alltagswortschatz und kurzen Sätzen schon bei Einfach. Die App spricht nur ganze Wörter und Sätze vor, keine einzelnen Laute.
+**Stand: Version 4.3**
+- **Einhorn spricht:** Ein Tipp aufs Einhorn im Hauptmenü – es hüpft und stellt sich vor („Ich bin Stella!“, mehrere Sätze im Wechsel).
+- **Neu anfangen:** Unter Einstellungen „Einhorn neu kennenlernen“ (Namensgebung noch einmal, alles andere bleibt) und „Alles zurücksetzen“ (wie neu installiert).
+- **Berg-Videos:** Erreichte Stationen auf dem Berg lassen sich antippen und spielen ihre Szene noch einmal ab. Noch nicht erreichte zeigen ein Schlösschen; nach der ersten Krone sind alle frei. Der Wald ist jetzt ein dichter Wald, das Feld hat eine eigene Szene.
+- **Eigene Inhaltsdateien:** Wörter, Übungen und Einstellungen stehen in `inhalte-abc.js`, `inhalte-english.js` und `einstellungen.js` und lassen sich direkt auf GitHub bearbeiten.
+- **Aufgenommene Stimmen:** natürlich klingende freie KI-Stimmen (Dii und Thorsten für Deutsch, Isabella und Cori für Englisch), offline nutzbar. Was nicht aufgenommen ist, spricht die iPad-Stimme.
 
 ## Dateien
 
 | Datei | Zweck |
 |---|---|
-| `index.html` | die ganze App (oben die Blöcke **CONFIG** und **BIBLIOTHEK** zum Anpassen) |
+| `index.html` | die App selbst |
+| `einstellungen.js` | Punkte, Bewertung, Berg-Stationen, Mischung pro Runde, Vorlesetempo, Lob und alle Sätze des Einhorns |
+| `inhalte-abc.js` | alle Karten des Spiels ABC (Buchstaben, Laute, Silben, Bildwörter) |
+| `inhalte-english.js` | alle Karten des Spiels English (Wörter und Sätze) |
+| `stimmen.json`, `stimme-….bin` | aufgenommene Stimmen (Liste und Tonpakete) |
 | `manifest.webmanifest` | Name und Symbol für den Home-Bildschirm |
-| `sw.js` | Service Worker: speichert alles für die Offline-Nutzung |
+| `sw.js` | Service Worker: macht die App offline nutzbar |
 | `icon-180.png`, `icon-512.png` | App-Symbol |
 | `logo-einhorn-abc.png` | Logo mit Schriftzug (optional, z. B. zum Ausdrucken) |
-| `SCHRIFT-LIZENZ.txt` | Lizenz der eingebetteten Schulschrift |
+| `SCHRIFT-LIZENZ.txt`, `STIMMEN-LIZENZ.txt` | Lizenzen der Schulschrift und der Stimmen |
 | `README.md`, `LERNINHALTE.md`, `ENTSCHEIDUNGEN.md` | Anleitung, Prüfung der Lerninhalte, alle Entscheidungen (optional hochladen) |
+
+## Inhalte bearbeiten
+
+1. Auf GitHub im Repository die Datei anklicken (`inhalte-abc.js`, `inhalte-english.js` oder `einstellungen.js`).
+2. Oben rechts auf den **Stift** („Edit this file“) tippen, ändern, unten **Commit changes**.
+3. Die App auf dem iPad einmal ganz schließen und **mit Internet** neu öffnen. Die App lädt diese Dateien jedes Mal frisch, `CACHE_VERSION` muss dafür nicht erhöht werden. (GitHub Pages braucht nach dem Speichern manchmal 1–2 Minuten.)
+
+Oben in jeder Datei steht, wie eine Karte aufgebaut ist, mit Beispiel. Wichtig: Texte in `"Anführungszeichen"`, zwischen zwei Einträgen ein Komma, bestehende `id`s nicht ändern.
+
+**Tippfehler sind kein Drama:** Steckt ein Fehler in einer Datei, spielt die App mit der zuletzt funktionierenden Fassung weiter und zeigt kurz einen Hinweis. Unter **Einstellungen › Bibliothek › Inhaltsdateien** steht dann, in welcher Datei und Zeile der Fehler steckt. Fehlerhafte einzelne Karten werden übersprungen und dort ebenfalls aufgelistet.
+
+**Neue Wörter und die aufgenommenen Stimmen:** Neue oder geänderte Wörter spricht zunächst die iPad-Stimme. Für neue Aufnahmen die geänderten Inhaltsdateien an Claude geben und die Stimmenpakete neu erzeugen lassen; danach `stimmen.json` und die neuen `stimme-….bin` hochladen und die alten `stimme-….bin` löschen.
 
 ## Auf GitHub Pages veröffentlichen
 
@@ -25,6 +44,14 @@ Version 4: Einhorn im Sticker-Stil (je Menü mit eigener Ausstattung), App-Symbo
 3. Auf der leeren Seite **uploading an existing file** wählen, alle Dateien hineinziehen und **Commit changes** klicken.
 4. Im Repository **Settings › Pages**: unter *Build and deployment* bei *Source* **Deploy from a branch** wählen, Branch **main** und Ordner **/ (root)**, dann **Save**.
 5. Nach 1–2 Minuten ist die App erreichbar unter `https://DEIN-NAME.github.io/einhorn-abc/`.
+
+## Neue Version einspielen
+
+1. Vorher in der App **Einstellungen › Sichern & Neu anfangen › Sicherung erstellen**.
+2. Die neuen Dateien im Repository hochladen (gleiche Namen werden ersetzt) und **Commit changes** klicken. Nicht mehr gebrauchte Dateien (z. B. alte `stimme-….bin`) löschen.
+3. Auf dem Gerät die App einmal mit Internet öffnen, ganz schließen und wieder öffnen.
+
+Spielstand, Einstellungen und eigene Karten bleiben dabei erhalten.
 
 ## Auf iPad oder iPhone aufs Home-Bildschirm legen
 
@@ -38,56 +65,37 @@ Wichtig: Apple erlaubt die **Spracherkennung nicht in Home-Bildschirm-Web-Apps**
 
 **Ohne Spracherkennung (Vollbild ohne Safari-Leiste):** wie oben, aber „Als Web-App öffnen“ eingeschaltet lassen. Dann bewertet ein Erwachsener mit Haken und X.
 
-Einmal auf den Bildschirm tippen, damit Ton und Sprache freigeschaltet werden. In der Vorschau anderer Apps (z. B. der Claude-App) ist das Mikrofon gesperrt – dort funktioniert die Spracherkennung nie.
-
-## Neue Version einspielen
-
-1. Vorher in der App **Einstellungen › Sichern › Sicherung erstellen**.
-2. Die neuen Dateien im Repository hochladen (gleiche Namen, ersetzen) und **Commit changes** klicken.
-3. In `sw.js` steht `CACHE_VERSION`. Sie wird bei jeder Lieferung erhöht, damit iPad und iPhone die neuen Dateien laden.
-4. Auf dem Gerät die App einmal öffnen, ganz schließen und wieder öffnen. Damit das neue App-Symbol erscheint, das Symbol auf dem Home-Bildschirm einmal löschen und neu anlegen.
-
-Spielstand, Einstellungen und eigene Karten bleiben dabei erhalten.
+Einmal auf den Bildschirm tippen, damit Ton und Sprache freigeschaltet werden.
 
 ## Einstellungen
 
 Das Zahnrad öffnet eine Übersicht mit fünf Bereichen:
 
-- **Spiel**: Name des Einhorns und des Kindes, Spracherkennung mit Mikrofon-Test, Lob vorlesen, Knöpfe ansagen (Standard: aus – dann dezente Harfentöne).
-- **Sounds & Stimmen**: deutsche und englische Vorlesestimme, Tempo, Stimmhöhe (mit Knopf „auf Standard“), Töne und Melodien mit Hörproben, Musik.
-- **Bibliothek**: alle Karten (ausblenden, eigene Fotos, Wort anhören) und neue Karten.
+- **Spiel**: Name des Einhorns und des Kindes, „Einhorn neu kennenlernen“, Spracherkennung mit Mikrofon-Test, Lob vorlesen, Knöpfe ansagen.
+- **Sounds & Stimmen**: aufgenommene Stimme wählen (mit Hörprobe) oder nur die iPad-Stimme; iPad-Stimme mit Tempo und Stimmhöhe; Töne und Musik.
+- **Bibliothek**: Prüfung der Inhaltsdateien, alle Karten (ausblenden, eigene Fotos, Wort anhören) und neue Karten.
 - **Fortschritt**: Berg, Einhorntraining, Trophäen zurücksetzen.
-- **Sichern**: Sicherung erstellen und laden.
+- **Sichern & Neu anfangen**: Sicherung erstellen und laden, Einhorn neu kennenlernen, alles zurücksetzen.
+
+## Stimmen
+
+- **Aufgenommene Stimmen:** Dii und Thorsten (Deutsch), Isabella und Cori (britisches Englisch) – freie KI-Stimmen, die vorab alle Bildwörter, englischen Wörter und Sätze sowie die Sätze des Einhorns aufgenommen haben (auch langsam für den 🐌-Knopf). Sie funktionieren offline und klingen natürlicher als die iPad-Stimmen. Lizenzen in `STIMMEN-LIZENZ.txt`.
+- **Namen:** Sätze mit dem Einhorn-Namen sind für die fünf Namensvorschläge (Luna, Stella, Glitzer, Rosalie, Sternchen) aufgenommen. Bei einem anderen Namen und für „My name is …“ spricht die iPad-Stimme.
+- **iPad-Stimme:** Safari kann nur die vorinstallierten Apple-Stimmen benutzen; nachgeladene „Erweitert“- oder „Premium“-Stimmen sind für Web-Apps gesperrt (Einschränkung von Apple). Tempo und Stimmhöhe gelten nur für die iPad-Stimme.
 
 ## Spracherkennung
 
 - Standard: aus. Einschalten unter **Einstellungen › Spiel › Spracherkennung**. Dort zeigt die App auch, ob sie auf diesem Gerät funktioniert, und bietet einen **Mikrofon-Test**.
 - Funktioniert nur im **Safari-Tab** (siehe oben), mit Internet und eingeschalteter Diktierfunktion (iPad-Einstellungen › Allgemein › Tastatur › Diktierfunktion).
-- Beim ersten Mal fragt Safari nach dem Mikrofon. Startet das Zuhören nicht von selbst, einmal auf das 🎤 tippen.
-- Das pulsierende 🎤 zeigt, dass zugehört wird. Haken und X bleiben klein sichtbar, falls die Erkennung danebenliegt.
 - Safari schickt dabei Sprachaufnahmen zur Auswertung an Apple. Alle anderen Daten bleiben auf dem Gerät.
-
-## Stimmen
-
-Safari kann auf iPad und iPhone nur die **vorinstallierten** Stimmen benutzen. Stimmen, die man in den iPad-Einstellungen nachlädt („Erweitert“ oder „Premium“), sind für Web-Apps derzeit gesperrt (Einschränkung von Apple). In der App unter **Einstellungen › Sounds & Stimmen**:
-
-- **Automatisch** wählen – das ist meist die angenehmste Stimme. Stimmen mit 🤖 klingen künstlich.
-- **Stimmhöhe** am besten bei 1,0 lassen und das **Tempo** nicht stark absenken: stark veränderte Werte lassen die Apple-Stimmen gedehnt und metallisch klingen. Der Knopf „Tempo und Stimmhöhe auf Standard“ stellt alles zurück.
-- Erscheint eine Stimme mit „⭐ Premium“ oder „✨ Erweitert“ in der Liste, kann Safari sie nutzen.
 
 ## Testmodus
 
-Mit `?test` hinter der Adresse (z. B. `…/einhorn-abc/index.html?test`) erscheint unten links ein 🧪-Knopf. Damit lassen sich Runden mit 10 bis 16 Versuchen simulieren (Platz, Punkte, Belohnung, Berg) und der Speicher löschen. Mit eingeschalteter Spracherkennung zeigt die App oben an, was sie verstanden hat.
+Mit `?test` hinter der Adresse (z. B. `…/einhorn-abc/index.html?test`) erscheint unten links ein 🧪-Knopf. Damit lassen sich Runden mit 10 bis 16 Versuchen simulieren (Platz, Punkte, Belohnung, Berg) und der Speicher löschen.
 
-## Inhalte anpassen
+## Melodien
 
-Oben in `index.html` stehen zwei kommentierte Blöcke:
-
-- **CONFIG**: Punkte, Bewertungsgrenzen, Berg-Stationen, Mischverhältnisse, Vorlesetempo und Stimmhöhe, Lob-Sätze, Laut-Varianten für die Spracherkennung (`lautVarianten`), Ansage „Nochmal!“ nach Fehlversuchen (`nochmalAnsagen`, Standard aus).
-- **MELODIEN** (etwas weiter unten im Programm): Start-Jingle, Melodien der Belohnungsszenen und der Berg-Stationen in einer einfachen Notenschrift.
-- **BIBLIOTHEK**: alle Karten beider Spiele. Jede Karte hat `teil: "de"` (ABC) oder `teil: "en"` (English).
-
-Einfacher geht es in der App unter **Einstellungen › Bibliothek**. Nach Änderungen an `index.html` die `CACHE_VERSION` in `sw.js` um 1 erhöhen.
+Start-Jingle, Melodien der Belohnungsszenen und der Berg-Stationen stehen im Block **MELODIEN** in `index.html` in einer einfachen Notenschrift.
 
 ## Schrift
 

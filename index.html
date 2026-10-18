@@ -15,485 +15,107 @@
 <link rel="manifest" href="manifest.webmanifest">
 <script>
 /* =====================================================================
-   CONFIG – Einstellungen für Eltern
-   Hier lassen sich Punkte, Bewertungsgrenzen, Berg-Stationen,
-   Mischverhältnisse und Tempo anpassen. Nach einer Änderung im
-   Service Worker (sw.js) die CACHE_VERSION um 1 erhöhen.
+   Inhalte: Die Wörter, Übungen und Einstellungen stehen in eigenen Dateien
+     einstellungen.js   – Punkte, Berg, Mischung, Tempo, Sätze des Einhorns
+     inhalte-abc.js     – alle Karten des Spiels ABC
+     inhalte-english.js – alle Karten des Spiels English
+   Hier werden Fehler beim Laden dieser Dateien gesammelt.
    ===================================================================== */
-const CONFIG = {
-  // Karten pro Runde (ohne Wiederholungen)
-  kartenProRunde: 10,
-
-  // Bewertung nach Anzahl der Versuche (gezeigte Karten inkl. Wiederholungen).
-  // "bis" = höchste Versuchszahl für diesen Platz.
-  bewertung: [
-    { bis: 11,       platz: 1, punkte: 4, szene: "gold"   },
-    { bis: 13,       platz: 2, punkte: 3, szene: "silber" },
-    { bis: 15,       platz: 3, punkte: 2, szene: "bronze" },
-    { bis: Infinity, platz: 4, punkte: 1, szene: "wiese"  }
-  ],
-
-  // Einhorn-Berg: Stationen mit Punktgrenze. Die letzte Station ist das Ziel.
-  stationen: [
-    { name: "Feld",            punkte: 0,  symbol: "🌼", satz: "Wir sind auf dem Feld!" },
-    { name: "Wald",            punkte: 10, symbol: "🌲", satz: "Wir sind im Wald!" },
-    { name: "Bergfuß",         punkte: 20, symbol: "🪨", satz: "Wir sind am Bergfuß!" },
-    { name: "Aufstieg",        punkte: 30, symbol: "🥾", satz: "Wir sind beim Aufstieg!" },
-    { name: "Steilwand",       punkte: 40, symbol: "🧗‍♀️", satz: "Wir sind an der Steilwand!" },
-    { name: "Gipfel",          punkte: 50, symbol: "🏔️", satz: "Wir sind auf dem Gipfel!" },
-    { name: "Über den Wolken", punkte: 60, symbol: "🌈", satz: "Wir sind über den Wolken!" }
-  ],
-  // Punkte über dem Ziel werden in die nächste Bergtour mitgenommen.
-  ueberschussMitnehmen: true,
-
-  // Mischverhältnisse pro Runde (ABC Einfach: nur Buchstaben; English Einfach: 7 Wörter + 3 kurze Sätze)
-  mischung: {
-    abc: { E: { buchstaben: 10, laute: 0 }, M: { buchstaben: 5, laute: 5 }, S: { buchstaben: 3, laute: 7 } },
-    en:  { E: { woerter: 7, saetze: 3 },  M: { woerter: 5, saetze: 5 },   S: { woerter: 0, saetze: 10 } }
-  },
-  // Feinregeln für die Auswahl
-  auswahl: {
-    abcSchwerLauteAusS: 5,   // bei Schwer: so viele Laute nur aus Stufe S …
-    abcSchwerLauteAusM: 2,   // … und so viele aus Stufe M
-    enSchwerSaetzeAusS: 6,   // bei English Schwer: Sätze aus S …
-    enSchwerSaetzeAusM: 4    // … und aus M
-  },
-
-  // Einhorntraining: so oft muss eine Karte im Training richtig sein, bis sie die Liste verlässt
-  trainingRichtigBisFertig: 2,
-
-  // Spracherkennung
-  sprechversuche: 3,          // höchstens so viele Sprechversuche pro Karte
-  pauseNachNochmalMs: 1200,   // Pause nach dem sanften „Nochmal“-Ton
-  hoerDauerMs: 7000,          // so lange wird pro Versuch höchstens zugehört
-  nochmalAnsagen: false,      // true = nach einem Fehlversuch zusätzlich „Nochmal!“ / „Try again!“ sagen
-  nochmalSprechenDe: "Nochmal!",
-  nochmalSprechenEn: "Try again!",
-
-  // Typische Laut-Varianten für die deutsche Spracherkennung. Safari schreibt bei kleinen
-  // Kindern oft zuerst so etwas wie „ah“, „äh“, „hm“ statt des reinen Lauts.
-  // Gedehnte Formen („aaah“, „mmmh“, „sss“) werden automatisch mit erkannt.
-  lautVarianten: {
-    a: ["ah", "ha", "aha", "ach"],      e: ["eh", "ä", "he", "ey", "hey", "ehe", "ähm"],
-    i: ["ih", "ie", "hi", "y"],         o: ["oh", "ho", "oho"],
-    u: ["uh", "hu", "uhu"],             m: ["mmh", "hm", "mhm", "äm", "ähm"],
-    l: ["äl", "elle"],                  s: ["zz", "ps", "pst"],
-    n: ["än", "ähn"],                   r: ["är", "ähr", "grr"],
-    f: ["pf", "uff"],                   h: ["hä", "he"],
-    w: ["wä", "ve"],                    ts: ["z", "tz", "tse"],
-    "ä": ["äh", "eh", "e", "ae"],       "ö": ["öh", "oe"],          "ü": ["üh", "ue"],
-    ei: ["hei", "hai", "ey", "hey"],    au: ["aua", "hau", "ow"],   eu: ["hoi", "heu", "oy"]
-  },
-
-  // Spiel English: Karte beim Erscheinen einmal automatisch vorlesen (je Stufe)
-  enAutoVorlesen: { E: true, M: true, S: true },
-
-  // Ablauf
-  naechsteKarteMs: 1000,      // Pause nach „richtig“
-  szeneDauerMs: 6500,         // Länge der Belohnungsszene (per Tipp überspringbar)
-
-  // Vorlesetempo (1 = normal). Sehr langsame Werte (unter ca. 0,8) lassen die Apple-Stimmen
-  // gedehnt und metallisch klingen – darum liegen die normalen Werte nah an 1.
-  // Nur der 🐌-Knopf im Spiel English spricht bewusst langsam.
-  tempo: { de: 0.94, enWort: 0.9, enSatz: 0.85, enLangsam: 0.55, bildwort: 0.9 },
-  // Stimmhöhe (1 = natürlich). Höhere Werte klingen schnell künstlich.
-  stimmhoehe: 1.0,
-
-  // Lob – wird nur vorgelesen, wenn in den Einstellungen „Lob vorlesen“ an ist
-  lobDe: ["Super!", "Toll gemacht!", "Klasse!", "{einhorn} freut sich!", "Du bist ein Lese-Star!"],
-  lobEn: ["Well done!", "Great job!", "Super!", "Fantastic!", "{einhorn} is so proud!"],
-  szenenLob: ["Toll geübt! {einhorn} ist so stolz auf dich!", "Super gemacht! {einhorn} freut sich riesig!", "Juhu! {einhorn} hat dich lieb!"],
-
-  // Vorschläge für den Einhorn-Namen beim ersten Start
-  namensVorschlaege: ["Luna", "Stella", "Glitzer", "Rosalie", "Sternchen"]
-};
-
-/* =====================================================================
-   BIBLIOTHEK – alle Lerninhalte beider Spiele
-   ---------------------------------------------------------------------
-   Jede Karte hat:  id (eindeutig), teil ("de" = Spiel ABC, "en" = Spiel English),
-                    typ, stufe ("E" = ab Einfach, "M" = ab Mittel, "S" = nur Schwer).
-
-   Spiel ABC
-     typ "buchstabe": zeichen (Großbuchstabe), laut (Lautform), name (Buchstabenname,
-                      wird nur ERKANNT, nie vorgelesen), woerter (Bildwörter).
-     typ "laut":      zeichen (Laut, Silbe oder Silbenwort mit | als Silbengrenze),
-                      art ("verbindung", "silbe", "silbenwort"), erkennung (optional).
-     woerter:  Liste aus [Bildwort, Emoji] oder [Bildwort, Emoji, eigene Lautform]
-     laut, erkennung, name: nur für die Spracherkennung – die App liest keine
-               einzelnen Laute vor. Der Hilfe-Knopf sagt immer das ganze Bildwort.
-     extra:    weitere akzeptierte Antworten (optional)
-
-   Spiel English (Alltagswortschatz zuerst; Einfach mit kurzen Alltagssätzen)
-     typ "wort" oder "satz": text (britisches Englisch), de (deutsche Bedeutung),
-                      bild (Emoji), varianten (optional), brauchtName (optional,
-                      {name} wird durch den Namen des Kindes ersetzt).
-
-   Stufen ABC (geprüft mit Vorschul-Quellen, siehe LERNINHALTE.md):
-     Einfach = nur Buchstaben: Selbstlaute + „Dauerlaute“ (M L S N R F) – lassen
-               sich dehnen und gut heraushören. Silben mit Stufe "E" kommen ab
-               Mittel dran (siehe CONFIG.mischung).
-     Mittel  = Fibel-Buchstaben mit „Stopp-Lauten“ (T D P K B G) sowie H W Z,
-               Zwielaute EI und AU, Silben damit, zweisilbige Wörter.
-     Schwer  = seltene Buchstaben, Umlaute, Lautverbindungen, dreisilbige Wörter
-               (Stoff der 1. Klasse).
-   ===================================================================== */
-const BIBLIOTHEK = [
-
-  /* ---------- ABC: Buchstaben – Einfach (Selbstlaute und Dauerlaute) ---------- */
-  { id: "b-a", teil: "de", typ: "buchstabe", zeichen: "A", stufe: "E", laut: "a", name: "a",
-    woerter: [["Affe", "🐒"], ["Ameise", "🐜"], ["Ananas", "🍍"], ["Apfel", "🍎"]] },
-  { id: "b-e", teil: "de", typ: "buchstabe", zeichen: "E", stufe: "E", laut: "e", name: "e",
-    woerter: [["Esel", "🫏"], ["Ente", "🦆"], ["Elefant", "🐘"], ["Engel", "👼"]] },
-  { id: "b-i", teil: "de", typ: "buchstabe", zeichen: "I", stufe: "E", laut: "i", name: "i",
-    woerter: [["Igel", "🦔"], ["Insel", "🏝️"]] },
-  { id: "b-o", teil: "de", typ: "buchstabe", zeichen: "O", stufe: "E", laut: "o", name: "o",
-    woerter: [["Ohr", "👂"], ["Oma", "👵"], ["Opa", "👴"]] },
-  { id: "b-u", teil: "de", typ: "buchstabe", zeichen: "U", stufe: "E", laut: "u", name: "u",
-    woerter: [["Uhr", "⌚"], ["Ufo", "🛸"], ["Unterhose", "🩲"]] },
-  { id: "b-m", teil: "de", typ: "buchstabe", zeichen: "M", stufe: "E", laut: "m", name: "em",
-    woerter: [["Maus", "🐭"], ["Mond", "🌙"], ["Milch", "🥛"], ["Mund", "👄"]] },
-  { id: "b-l", teil: "de", typ: "buchstabe", zeichen: "L", stufe: "E", laut: "l", name: "el",
-    woerter: [["Löwe", "🦁"], ["Lama", "🦙"], ["Lolli", "🍭"], ["Löffel", "🥄"]] },
-  { id: "b-s", teil: "de", typ: "buchstabe", zeichen: "S", stufe: "E", laut: "s", name: "es",
-    woerter: [["Sonne", "☀️"], ["Socke", "🧦"], ["Sofa", "🛋️"], ["Salat", "🥗"]] },
-  { id: "b-n", teil: "de", typ: "buchstabe", zeichen: "N", stufe: "E", laut: "n", name: "en",
-    woerter: [["Nase", "👃"], ["Nest", "🪺"], ["Nudeln", "🍝"], ["Nilpferd", "🦛"]] },
-  { id: "b-r", teil: "de", typ: "buchstabe", zeichen: "R", stufe: "E", laut: "r", name: "er",
-    woerter: [["Rakete", "🚀"], ["Rose", "🌹"], ["Regenbogen", "🌈"], ["Roboter", "🤖"]] },
-  { id: "b-f", teil: "de", typ: "buchstabe", zeichen: "F", stufe: "E", laut: "f", name: "ef",
-    woerter: [["Fisch", "🐟"], ["Fuchs", "🦊"], ["Fee", "🧚"], ["Feuer", "🔥"]] },
-
-  /* ---------- ABC: Buchstaben – Mittel ---------- */
-  { id: "b-t", teil: "de", typ: "buchstabe", zeichen: "T", stufe: "M", laut: "t", name: "te",
-    woerter: [["Tiger", "🐯"], ["Tomate", "🍅"], ["Torte", "🎂"], ["Teddy", "🧸"]] },
-  { id: "b-d", teil: "de", typ: "buchstabe", zeichen: "D", stufe: "M", laut: "d", name: "de",
-    woerter: [["Dino", "🦕"], ["Delfin", "🐬"], ["Dose", "🥫"], ["Dusche", "🚿"]] },
-  { id: "b-p", teil: "de", typ: "buchstabe", zeichen: "P", stufe: "M", laut: "p", name: "pe",
-    woerter: [["Pinguin", "🐧"], ["Pizza", "🍕"], ["Pilz", "🍄"], ["Panda", "🐼"]] },
-  { id: "b-k", teil: "de", typ: "buchstabe", zeichen: "K", stufe: "M", laut: "k", name: "ka",
-    woerter: [["Katze", "🐱"], ["Kuh", "🐮"], ["Käse", "🧀"], ["Keks", "🍪"], ["Kuchen", "🍰"]] },
-  { id: "b-b", teil: "de", typ: "buchstabe", zeichen: "B", stufe: "M", laut: "b", name: "be",
-    woerter: [["Banane", "🍌"], ["Bär", "🐻"], ["Biene", "🐝"], ["Buch", "📖"], ["Ball", "🏀"]] },
-  { id: "b-g", teil: "de", typ: "buchstabe", zeichen: "G", stufe: "M", laut: "g", name: "ge",
-    woerter: [["Gans", "🪿"], ["Gabel", "🍴"], ["Gurke", "🥒"], ["Gitarre", "🎸"]] },
-  { id: "b-h", teil: "de", typ: "buchstabe", zeichen: "H", stufe: "M", laut: "h", name: "ha",
-    woerter: [["Haus", "🏠"], ["Hund", "🐶"], ["Herz", "❤️"], ["Hase", "🐰"]] },
-  { id: "b-w", teil: "de", typ: "buchstabe", zeichen: "W", stufe: "M", laut: "w", name: "we",
-    woerter: [["Wal", "🐳"], ["Wolke", "☁️"], ["Wurm", "🪱"], ["Wolf", "🐺"]] },
-  { id: "b-z", teil: "de", typ: "buchstabe", zeichen: "Z", stufe: "M", laut: "ts", name: "zett",
-    woerter: [["Zebra", "🦓"], ["Zahn", "🦷"], ["Zitrone", "🍋"], ["Zug", "🚂"]] },
-
-  /* ---------- ABC: Buchstaben – Schwer ---------- */
-  { id: "b-c", teil: "de", typ: "buchstabe", zeichen: "C", stufe: "S", laut: "k", name: ["ce", "tse"],
-    woerter: [["Computer", "💻"], ["Cowboy", "🤠"], ["Clown", "🤡"]] },
-  { id: "b-j", teil: "de", typ: "buchstabe", zeichen: "J", stufe: "S", laut: "j", name: "jot",
-    woerter: [["Jacke", "🧥"], ["Jo-Jo", "🪀"], ["Junge", "👦"]] },
-  { id: "b-q", teil: "de", typ: "buchstabe", zeichen: "Q", stufe: "S", laut: "kw", name: "ku",
-    woerter: [["Qualle", "🪼"], ["Quadrat", "🟪"]] },
-  { id: "b-v", teil: "de", typ: "buchstabe", zeichen: "V", stufe: "S", laut: ["f", "w"], name: "fau",
-    woerter: [["Vogel", "🐦", "f"], ["Vulkan", "🌋", "w"], ["Vase", "🏺", "w"]] },
-  { id: "b-x", teil: "de", typ: "buchstabe", zeichen: "X", stufe: "S", laut: "ks", name: "ix",
-    woerter: [["Taxi", "🚕"], ["Hexe", "🧙‍♀️"]] },
-  { id: "b-y", teil: "de", typ: "buchstabe", zeichen: "Y", stufe: "S", laut: ["j", "i", "ü"], name: "ypsilon",
-    woerter: [["Yoga", "🧘", "j"], ["Baby", "👶", "i"]] },
-  { id: "b-ae", teil: "de", typ: "buchstabe", zeichen: "Ä", stufe: "S", laut: "ä", name: "ä",
-    woerter: [["Äpfel", "🍎🍎"], ["Käfer", "🐞"], ["Bär", "🐻"]] },
-  { id: "b-oe", teil: "de", typ: "buchstabe", zeichen: "Ö", stufe: "S", laut: "ö", name: "ö",
-    woerter: [["Löwe", "🦁"], ["Flöte", "🪈"], ["Öl", "🛢️"]] },
-  { id: "b-ue", teil: "de", typ: "buchstabe", zeichen: "Ü", stufe: "S", laut: "ü", name: "ü",
-    woerter: [["Tür", "🚪"], ["Würfel", "🎲"], ["Hütte", "🛖"]] },
-
-  /* ---------- ABC: Zwielaute und Lautverbindungen ---------- */
-  { id: "v-ei", teil: "de", typ: "laut", art: "verbindung", zeichen: "ei", stufe: "M", erkennung: ["ei", "ai"],
-    woerter: [["Eis", "🍦"], ["Ei", "🥚"], ["Eimer", "🪣"], ["Eichhörnchen", "🐿️"]] },
-  { id: "v-au", teil: "de", typ: "laut", art: "verbindung", zeichen: "au", stufe: "M", erkennung: ["au"],
-    woerter: [["Auto", "🚗"], ["Auge", "👁️"], ["Maus", "🐭"], ["Haus", "🏠"]] },
-  { id: "v-eu", teil: "de", typ: "laut", art: "verbindung", zeichen: "eu", stufe: "S", erkennung: ["eu", "oi"],
-    woerter: [["Eule", "🦉"], ["Euro", "💶"], ["Feuer", "🔥"]] },
-  { id: "v-aeu", teil: "de", typ: "laut", art: "verbindung", zeichen: "äu", stufe: "S", erkennung: ["äu", "eu", "oi"],
-    woerter: [["Bäume", "🌳🌳"], ["Mäuse", "🐭🐭"], ["Häuser", "🏠🏠"]] },
-  { id: "v-ie", teil: "de", typ: "laut", art: "verbindung", zeichen: "ie", stufe: "S", erkennung: ["ie", "i"],
-    woerter: [["Biene", "🐝"], ["Brief", "✉️"], ["Ziege", "🐐"], ["Fliege", "🪰"]] },
-  { id: "v-sch", teil: "de", typ: "laut", art: "verbindung", zeichen: "sch", stufe: "S", erkennung: ["sch"],
-    woerter: [["Schaf", "🐑"], ["Schnecke", "🐌"], ["Schere", "✂️"], ["Schuh", "👟"], ["Schiff", "🚢"]] },
-  { id: "v-ch", teil: "de", typ: "laut", art: "verbindung", zeichen: "ch", stufe: "S", erkennung: ["ch", "ach"],
-    woerter: [["Buch", "📖"], ["Kuchen", "🍰"], ["Drache", "🐉"]] },
-  { id: "v-st", teil: "de", typ: "laut", art: "verbindung", zeichen: "st", stufe: "S", erkennung: ["st", "scht"],
-    woerter: [["Stern", "⭐"], ["Stuhl", "🪑"], ["Stift", "✏️"], ["Stein", "🪨"]] },
-  { id: "v-sp", teil: "de", typ: "laut", art: "verbindung", zeichen: "sp", stufe: "S", erkennung: ["sp", "schp"],
-    woerter: [["Spinne", "🕷️"], ["Spiegel", "🪞"]] },
-  { id: "v-pf", teil: "de", typ: "laut", art: "verbindung", zeichen: "pf", stufe: "S", erkennung: ["pf"],
-    woerter: [["Pferd", "🐴"], ["Pfanne", "🍳"], ["Apfel", "🍎"]] },
-  { id: "v-ng", teil: "de", typ: "laut", art: "verbindung", zeichen: "ng", stufe: "S", erkennung: ["ng"],
-    woerter: [["Ring", "💍"], ["Schlange", "🐍"], ["Zunge", "👅"]] },
-  { id: "v-nk", teil: "de", typ: "laut", art: "verbindung", zeichen: "nk", stufe: "S", erkennung: ["nk"],
-    woerter: [["Geschenk", "🎁"], ["Anker", "⚓"]] },
-  { id: "v-ck", teil: "de", typ: "laut", art: "verbindung", zeichen: "ck", stufe: "S", erkennung: ["ck", "k"],
-    woerter: [["Socke", "🧦"], ["Schnecke", "🐌"], ["Jacke", "🧥"], ["Glocke", "🔔"]] },
-
-  /* ---------- ABC: Silben mit Dauerlauten (M L S N R F) ---------- */
-  { id: "s-ma", teil: "de", typ: "laut", art: "silbe", zeichen: "ma", stufe: "E", woerter: [["Maler", "🧑‍🎨"], ["Magnet", "🧲"]] },
-  { id: "s-me", teil: "de", typ: "laut", art: "silbe", zeichen: "me", stufe: "E", woerter: [["Melone", "🍉"], ["Meer", "🌊"]] },
-  { id: "s-mi", teil: "de", typ: "laut", art: "silbe", zeichen: "mi", stufe: "E", woerter: [["Mikrofon", "🎤"], ["Milch", "🥛"]] },
-  { id: "s-mo", teil: "de", typ: "laut", art: "silbe", zeichen: "mo", stufe: "E", woerter: [["Motorrad", "🏍️"], ["Mond", "🌙"]] },
-  { id: "s-mu", teil: "de", typ: "laut", art: "silbe", zeichen: "mu", stufe: "E", woerter: [["Musik", "🎵"], ["Muschel", "🐚"]] },
-  { id: "s-la", teil: "de", typ: "laut", art: "silbe", zeichen: "la", stufe: "E", woerter: [["Lama", "🦙"], ["Laterne", "🏮"]] },
-  { id: "s-le", teil: "de", typ: "laut", art: "silbe", zeichen: "le", stufe: "M", woerter: [["Leopard", "🐆"]] },
-  { id: "s-li", teil: "de", typ: "laut", art: "silbe", zeichen: "li", stufe: "E", woerter: [["Limo", "🥤"], ["Lineal", "📏"]] },
-  { id: "s-lo", teil: "de", typ: "laut", art: "silbe", zeichen: "lo", stufe: "E", woerter: [["Lolli", "🍭"], ["Lok", "🚂"]] },
-  { id: "s-lu", teil: "de", typ: "laut", art: "silbe", zeichen: "lu", stufe: "E", woerter: [["Lupe", "🔍"], ["Luftballon", "🎈"]] },
-  { id: "s-sa", teil: "de", typ: "laut", art: "silbe", zeichen: "sa", stufe: "E", woerter: [["Salat", "🥗"], ["Saft", "🧃"]] },
-  { id: "s-se", teil: "de", typ: "laut", art: "silbe", zeichen: "se", stufe: "M", woerter: [["Seehund", "🦭"], ["Segelboot", "⛵"]] },
-  { id: "s-si", teil: "de", typ: "laut", art: "silbe", zeichen: "si", stufe: "M", woerter: [["Sirene", "🚨"]] },
-  { id: "s-so", teil: "de", typ: "laut", art: "silbe", zeichen: "so", stufe: "E", woerter: [["Sofa", "🛋️"], ["Sonne", "☀️"]] },
-  { id: "s-su", teil: "de", typ: "laut", art: "silbe", zeichen: "su", stufe: "E", woerter: [["Suppe", "🍲"], ["Sushi", "🍣"]] },
-  { id: "s-na", teil: "de", typ: "laut", art: "silbe", zeichen: "na", stufe: "E", woerter: [["Nase", "👃"], ["Nadel", "🪡"]] },
-  { id: "s-ne", teil: "de", typ: "laut", art: "silbe", zeichen: "ne", stufe: "M", woerter: [["Nest", "🪺"], ["Nebel", "🌫️"]] },
-  { id: "s-ni", teil: "de", typ: "laut", art: "silbe", zeichen: "ni", stufe: "M", woerter: [["Nilpferd", "🦛"]] },
-  { id: "s-no", teil: "de", typ: "laut", art: "silbe", zeichen: "no", stufe: "M", woerter: [["Noten", "🎶"]] },
-  { id: "s-nu", teil: "de", typ: "laut", art: "silbe", zeichen: "nu", stufe: "E", woerter: [["Nudeln", "🍝"], ["Nuss", "🥜"]] },
-  { id: "s-ra", teil: "de", typ: "laut", art: "silbe", zeichen: "ra", stufe: "E", woerter: [["Rakete", "🚀"], ["Radio", "📻"]] },
-  { id: "s-re", teil: "de", typ: "laut", art: "silbe", zeichen: "re", stufe: "M", woerter: [["Regen", "🌧️"], ["Regenbogen", "🌈"]] },
-  { id: "s-ri", teil: "de", typ: "laut", art: "silbe", zeichen: "ri", stufe: "M", woerter: [["Ring", "💍"]] },
-  { id: "s-ro", teil: "de", typ: "laut", art: "silbe", zeichen: "ro", stufe: "E", woerter: [["Rose", "🌹"], ["Roboter", "🤖"]] },
-  { id: "s-ru", teil: "de", typ: "laut", art: "silbe", zeichen: "ru", stufe: "M", woerter: [["Rucksack", "🎒"]] },
-  { id: "s-fa", teil: "de", typ: "laut", art: "silbe", zeichen: "fa", stufe: "E", woerter: [["Fahne", "🚩"], ["Fahrrad", "🚲"]] },
-  { id: "s-fe", teil: "de", typ: "laut", art: "silbe", zeichen: "fe", stufe: "M", woerter: [["Feder", "🪶"], ["Fee", "🧚"]] },
-  { id: "s-fi", teil: "de", typ: "laut", art: "silbe", zeichen: "fi", stufe: "E", woerter: [["Fisch", "🐟"], ["Finger", "☝️"]] },
-  { id: "s-fo", teil: "de", typ: "laut", art: "silbe", zeichen: "fo", stufe: "M", woerter: [["Foto", "📷"]] },
-  { id: "s-fu", teil: "de", typ: "laut", art: "silbe", zeichen: "fu", stufe: "E", woerter: [["Fuchs", "🦊"], ["Fußball", "⚽"]] },
-
-  /* ---------- ABC: Silben mit Stopp-Lauten und H W Z (alle Mittel) ---------- */
-  { id: "s-ta", teil: "de", typ: "laut", art: "silbe", zeichen: "ta", stufe: "M", woerter: [["Tasse", "☕"], ["Taxi", "🚕"]] },
-  { id: "s-te", teil: "de", typ: "laut", art: "silbe", zeichen: "te", stufe: "M", woerter: [["Telefon", "☎️"], ["Teddy", "🧸"]] },
-  { id: "s-ti", teil: "de", typ: "laut", art: "silbe", zeichen: "ti", stufe: "M", woerter: [["Tiger", "🐯"]] },
-  { id: "s-to", teil: "de", typ: "laut", art: "silbe", zeichen: "to", stufe: "M", woerter: [["Tomate", "🍅"], ["Torte", "🎂"]] },
-  { id: "s-tu", teil: "de", typ: "laut", art: "silbe", zeichen: "tu", stufe: "M", woerter: [["Tulpe", "🌷"], ["Turm", "🗼"]] },
-  { id: "s-di", teil: "de", typ: "laut", art: "silbe", zeichen: "di", stufe: "M", woerter: [["Dino", "🦕"]] },
-  { id: "s-do", teil: "de", typ: "laut", art: "silbe", zeichen: "do", stufe: "M", woerter: [["Dose", "🥫"], ["Donut", "🍩"]] },
-  { id: "s-du", teil: "de", typ: "laut", art: "silbe", zeichen: "du", stufe: "M", woerter: [["Dusche", "🚿"]] },
-  { id: "s-pa", teil: "de", typ: "laut", art: "silbe", zeichen: "pa", stufe: "M", woerter: [["Paket", "📦"], ["Panda", "🐼"]] },
-  { id: "s-pi", teil: "de", typ: "laut", art: "silbe", zeichen: "pi", stufe: "M", woerter: [["Pilot", "🧑‍✈️"], ["Pizza", "🍕"]] },
-  { id: "s-po", teil: "de", typ: "laut", art: "silbe", zeichen: "po", stufe: "M", woerter: [["Pony", "🐴"], ["Pommes", "🍟"]] },
-  { id: "s-ka", teil: "de", typ: "laut", art: "silbe", zeichen: "ka", stufe: "M", woerter: [["Kamel", "🐫"], ["Katze", "🐱"]] },
-  { id: "s-ko", teil: "de", typ: "laut", art: "silbe", zeichen: "ko", stufe: "M", woerter: [["Koala", "🐨"], ["Koffer", "🧳"]] },
-  { id: "s-ku", teil: "de", typ: "laut", art: "silbe", zeichen: "ku", stufe: "M", woerter: [["Kuh", "🐮"], ["Kuchen", "🍰"]] },
-  { id: "s-ba", teil: "de", typ: "laut", art: "silbe", zeichen: "ba", stufe: "M", woerter: [["Banane", "🍌"], ["Baby", "👶"]] },
-  { id: "s-bi", teil: "de", typ: "laut", art: "silbe", zeichen: "bi", stufe: "M", woerter: [["Biene", "🐝"], ["Birne", "🍐"]] },
-  { id: "s-bu", teil: "de", typ: "laut", art: "silbe", zeichen: "bu", stufe: "M", woerter: [["Bus", "🚌"], ["Buch", "📖"]] },
-  { id: "s-ga", teil: "de", typ: "laut", art: "silbe", zeichen: "ga", stufe: "M", woerter: [["Gabel", "🍴"], ["Gans", "🪿"]] },
-  { id: "s-go", teil: "de", typ: "laut", art: "silbe", zeichen: "go", stufe: "M", woerter: [["Gorilla", "🦍"]] },
-  { id: "s-ha", teil: "de", typ: "laut", art: "silbe", zeichen: "ha", stufe: "M", woerter: [["Hase", "🐰"], ["Hahn", "🐓"]] },
-  { id: "s-ho", teil: "de", typ: "laut", art: "silbe", zeichen: "ho", stufe: "M", woerter: [["Hose", "👖"], ["Honig", "🍯"]] },
-  { id: "s-hu", teil: "de", typ: "laut", art: "silbe", zeichen: "hu", stufe: "M", woerter: [["Hut", "👒"], ["Huhn", "🐔"]] },
-  { id: "s-wa", teil: "de", typ: "laut", art: "silbe", zeichen: "wa", stufe: "M", woerter: [["Wal", "🐳"], ["Wasser", "💧"]] },
-  { id: "s-wi", teil: "de", typ: "laut", art: "silbe", zeichen: "wi", stufe: "M", woerter: [["Wind", "🌬️"]] },
-  { id: "s-wo", teil: "de", typ: "laut", art: "silbe", zeichen: "wo", stufe: "M", woerter: [["Wolke", "☁️"], ["Wolle", "🧶"]] },
-  { id: "s-ze", teil: "de", typ: "laut", art: "silbe", zeichen: "ze", stufe: "M", woerter: [["Zebra", "🦓"]] },
-  { id: "s-zi", teil: "de", typ: "laut", art: "silbe", zeichen: "zi", stufe: "M", woerter: [["Zirkus", "🎪"], ["Zitrone", "🍋"]] },
-  { id: "s-zu", teil: "de", typ: "laut", art: "silbe", zeichen: "zu", stufe: "M", woerter: [["Zug", "🚂"]] },
-
-  /* ---------- ABC: Silben mit Selbstlaut vorne (wie auf den Leseblättern) ---------- */
-  { id: "s-am", teil: "de", typ: "laut", art: "silbe", zeichen: "am", stufe: "M", woerter: [["Ampel", "🚦"]] },
-  { id: "s-an", teil: "de", typ: "laut", art: "silbe", zeichen: "an", stufe: "M", woerter: [["Anker", "⚓"], ["Angel", "🎣"]] },
-  { id: "s-in", teil: "de", typ: "laut", art: "silbe", zeichen: "in", stufe: "M", woerter: [["Insel", "🏝️"]] },
-  { id: "s-es", teil: "de", typ: "laut", art: "silbe", zeichen: "es", stufe: "M", woerter: [["Essen", "🍽️"]] },
-  { id: "s-os", teil: "de", typ: "laut", art: "silbe", zeichen: "os", stufe: "M", woerter: [["Ostern", "🐣"]] },
-
-  /* ---------- ABC: Silbenwörter mit zwei Silben (ab Mittel) ---------- */
-  { id: "w-mama", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ma|ma", stufe: "M", woerter: [["Mama", "👩"]] },
-  { id: "w-oma",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "O|ma",  stufe: "M", woerter: [["Oma", "👵"]] },
-  { id: "w-opa",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "O|pa",  stufe: "M", woerter: [["Opa", "👴"]] },
-  { id: "w-lama", teil: "de", typ: "laut", art: "silbenwort", zeichen: "La|ma", stufe: "M", woerter: [["Lama", "🦙"]] },
-  { id: "w-sofa", teil: "de", typ: "laut", art: "silbenwort", zeichen: "So|fa", stufe: "M", woerter: [["Sofa", "🛋️"]] },
-  { id: "w-nase", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Na|se", stufe: "M", woerter: [["Nase", "👃"]] },
-  { id: "w-rose", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ro|se", stufe: "M", woerter: [["Rose", "🌹"]] },
-  { id: "w-limo", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Li|mo", stufe: "M", woerter: [["Limo", "🥤"]] },
-  { id: "w-hose", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ho|se", stufe: "M", woerter: [["Hose", "👖"]] },
-  { id: "w-dose", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Do|se", stufe: "M", woerter: [["Dose", "🥫"]] },
-  { id: "w-hase", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ha|se", stufe: "M", woerter: [["Hase", "🐰"]] },
-  { id: "w-rabe", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ra|be", stufe: "M", woerter: [["Rabe", "🐦‍⬛"]] },
-  { id: "w-gabel", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ga|bel", stufe: "M", woerter: [["Gabel", "🍴"]] },
-  { id: "w-nadel", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Na|del", stufe: "M", woerter: [["Nadel", "🪡"]] },
-  { id: "w-feder", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Fe|der", stufe: "M", woerter: [["Feder", "🪶"]] },
-  { id: "w-kamel", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ka|mel", stufe: "M", woerter: [["Kamel", "🐫"]] },
-
-  /* ---------- ABC: Silbenwörter mit drei Silben und Taxi (Schwer) ---------- */
-  { id: "w-taxi",    teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ta|xi",      stufe: "S", woerter: [["Taxi", "🚕"]] },
-  { id: "w-rakete",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ra|ke|te",   stufe: "S", woerter: [["Rakete", "🚀"]] },
-  { id: "w-tomate",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "To|ma|te",   stufe: "S", woerter: [["Tomate", "🍅"]] },
-  { id: "w-banane",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ba|na|ne",   stufe: "S", woerter: [["Banane", "🍌"]] },
-  { id: "w-melone",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "Me|lo|ne",   stufe: "S", woerter: [["Melone", "🍉"]] },
-  { id: "w-roboter", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ro|bo|ter",  stufe: "S", woerter: [["Roboter", "🤖"]] },
-  { id: "w-telefon", teil: "de", typ: "laut", art: "silbenwort", zeichen: "Te|le|fon",  stufe: "S", woerter: [["Telefon", "☎️"]] },
-  { id: "w-kamera",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "Ka|me|ra",   stufe: "S", woerter: [["Kamera", "📷"]] },
-  { id: "w-ananas",  teil: "de", typ: "laut", art: "silbenwort", zeichen: "A|na|nas",   stufe: "S", woerter: [["Ananas", "🍍"]] },
-
-  /* ---------- English: Wörter – Einfach (Alltag zuerst) ---------- */
-  // Essen und Trinken
-  { id: "en-water",   teil: "en", typ: "wort", text: "water",     de: "Wasser",  bild: "💧", stufe: "E" },
-  { id: "en-milk",    teil: "en", typ: "wort", text: "milk",      de: "Milch",   bild: "🥛", stufe: "E" },
-  { id: "en-juice",   teil: "en", typ: "wort", text: "juice",     de: "Saft",    bild: "🧃", stufe: "E" },
-  { id: "en-bread",   teil: "en", typ: "wort", text: "bread",     de: "Brot",    bild: "🍞", stufe: "E", varianten: ["bred"] },
-  { id: "en-apple",   teil: "en", typ: "wort", text: "apple",     de: "Apfel",   bild: "🍎", stufe: "E" },
-  { id: "en-banana",  teil: "en", typ: "wort", text: "banana",    de: "Banane",  bild: "🍌", stufe: "E" },
-  { id: "en-biscuit", teil: "en", typ: "wort", text: "biscuit",   de: "Keks",    bild: "🍪", stufe: "E", varianten: ["cookie"] },
-  { id: "en-cake",    teil: "en", typ: "wort", text: "cake",      de: "Kuchen",  bild: "🍰", stufe: "E" },
-  { id: "en-cheese",  teil: "en", typ: "wort", text: "cheese",    de: "Käse",    bild: "🧀", stufe: "E" },
-  { id: "en-egg",     teil: "en", typ: "wort", text: "egg",       de: "Ei",      bild: "🥚", stufe: "E" },
-  { id: "en-icecream",teil: "en", typ: "wort", text: "ice cream", de: "Eis",     bild: "🍦", stufe: "E", varianten: ["icecream", "ice-cream"] },
-  { id: "en-pizza",   teil: "en", typ: "wort", text: "pizza",     de: "Pizza",   bild: "🍕", stufe: "E" },
-  // Zuhause und Alltag
-  { id: "en-house",      teil: "en", typ: "wort", text: "house",      de: "Haus",       bild: "🏠", stufe: "E" },
-  { id: "en-bed",        teil: "en", typ: "wort", text: "bed",        de: "Bett",       bild: "🛏️", stufe: "E" },
-  { id: "en-bath",       teil: "en", typ: "wort", text: "bath",       de: "Badewanne",  bild: "🛁", stufe: "E" },
-  { id: "en-toothbrush", teil: "en", typ: "wort", text: "toothbrush", de: "Zahnbürste", bild: "🪥", stufe: "E" },
-  { id: "en-cup",        teil: "en", typ: "wort", text: "cup",        de: "Tasse",      bild: "☕", stufe: "E" },
-  { id: "en-spoon",      teil: "en", typ: "wort", text: "spoon",      de: "Löffel",     bild: "🥄", stufe: "E" },
-  { id: "en-book",       teil: "en", typ: "wort", text: "book",       de: "Buch",       bild: "📖", stufe: "E" },
-  { id: "en-ball",       teil: "en", typ: "wort", text: "ball",       de: "Ball",       bild: "⚽", stufe: "E" },
-  { id: "en-teddy",      teil: "en", typ: "wort", text: "teddy",      de: "Teddy",      bild: "🧸", stufe: "E", varianten: ["teddy bear"] },
-  { id: "en-car",        teil: "en", typ: "wort", text: "car",        de: "Auto",       bild: "🚗", stufe: "E" },
-  { id: "en-bus",        teil: "en", typ: "wort", text: "bus",        de: "Bus",        bild: "🚌", stufe: "E" },
-  // Anziehen
-  { id: "en-shoes",  teil: "en", typ: "wort", text: "shoes",   de: "Schuhe", bild: "👟", stufe: "E", varianten: ["shoe"] },
-  { id: "en-socks",  teil: "en", typ: "wort", text: "socks",   de: "Socken", bild: "🧦", stufe: "E", varianten: ["sock"] },
-  { id: "en-hat",    teil: "en", typ: "wort", text: "hat",     de: "Hut",    bild: "👒", stufe: "E" },
-  { id: "en-coat",   teil: "en", typ: "wort", text: "coat",    de: "Jacke",  bild: "🧥", stufe: "E", varianten: ["jacket"] },
-  { id: "en-tshirt", teil: "en", typ: "wort", text: "T-shirt", de: "T-Shirt", bild: "👕", stufe: "E", varianten: ["t shirt", "tshirt", "tee shirt"] },
-  // Familie
-  { id: "en-mum",     teil: "en", typ: "wort", text: "mum",     de: "Mama",      bild: "👩", stufe: "E", varianten: ["mummy", "mom", "mam"] },
-  { id: "en-dad",     teil: "en", typ: "wort", text: "dad",     de: "Papa",      bild: "👨", stufe: "E", varianten: ["daddy"] },
-  { id: "en-baby",    teil: "en", typ: "wort", text: "baby",    de: "Baby",      bild: "👶", stufe: "E" },
-  { id: "en-sister",  teil: "en", typ: "wort", text: "sister",  de: "Schwester", bild: "👧", stufe: "E" },
-  { id: "en-brother", teil: "en", typ: "wort", text: "brother", de: "Bruder",    bild: "👦", stufe: "E" },
-  { id: "en-grandma", teil: "en", typ: "wort", text: "grandma", de: "Oma",       bild: "👵", stufe: "E", varianten: ["granny", "nana"] },
-  { id: "en-grandpa", teil: "en", typ: "wort", text: "grandpa", de: "Opa",       bild: "👴", stufe: "E", varianten: ["grandad", "granddad"] },
-  // Tiere
-  { id: "en-cat",     teil: "en", typ: "wort", text: "cat",     de: "Katze",   bild: "🐱", stufe: "E" },
-  { id: "en-dog",     teil: "en", typ: "wort", text: "dog",     de: "Hund",    bild: "🐶", stufe: "E" },
-  { id: "en-fish",    teil: "en", typ: "wort", text: "fish",    de: "Fisch",   bild: "🐟", stufe: "E" },
-  { id: "en-bird",    teil: "en", typ: "wort", text: "bird",    de: "Vogel",   bild: "🐦", stufe: "E" },
-  { id: "en-horse",   teil: "en", typ: "wort", text: "horse",   de: "Pferd",   bild: "🐴", stufe: "E" },
-  { id: "en-cow",     teil: "en", typ: "wort", text: "cow",     de: "Kuh",     bild: "🐮", stufe: "E" },
-  { id: "en-pig",     teil: "en", typ: "wort", text: "pig",     de: "Schwein", bild: "🐷", stufe: "E" },
-  { id: "en-duck",    teil: "en", typ: "wort", text: "duck",    de: "Ente",    bild: "🦆", stufe: "E" },
-  { id: "en-mouse",   teil: "en", typ: "wort", text: "mouse",   de: "Maus",    bild: "🐭", stufe: "E" },
-  { id: "en-rabbit",  teil: "en", typ: "wort", text: "rabbit",  de: "Hase",    bild: "🐰", stufe: "E", varianten: ["bunny"] },
-  { id: "en-bear",    teil: "en", typ: "wort", text: "bear",    de: "Bär",     bild: "🐻", stufe: "E" },
-  { id: "en-unicorn", teil: "en", typ: "wort", text: "unicorn", de: "Einhorn", bild: "🦄", stufe: "E" },
-  // Farben und Himmel
-  { id: "en-red",    teil: "en", typ: "wort", text: "red",    de: "rot",   bild: "🔴", stufe: "E", varianten: ["read"] },
-  { id: "en-blue",   teil: "en", typ: "wort", text: "blue",   de: "blau",  bild: "🔵", stufe: "E", varianten: ["blew"] },
-  { id: "en-yellow", teil: "en", typ: "wort", text: "yellow", de: "gelb",  bild: "🟡", stufe: "E" },
-  { id: "en-green",  teil: "en", typ: "wort", text: "green",  de: "grün",  bild: "🟢", stufe: "E" },
-  { id: "en-pink",   teil: "en", typ: "wort", text: "pink",   de: "rosa",  bild: "🩷", stufe: "E" },
-  { id: "en-sun",    teil: "en", typ: "wort", text: "sun",    de: "Sonne", bild: "☀️", stufe: "E", varianten: ["son"] },
-  { id: "en-moon",   teil: "en", typ: "wort", text: "moon",   de: "Mond",  bild: "🌙", stufe: "E" },
-  { id: "en-star",   teil: "en", typ: "wort", text: "star",   de: "Stern", bild: "⭐", stufe: "E" },
-
-  /* ---------- English: Wörter – Mittel ---------- */
-  // Körper
-  { id: "en-hand",  teil: "en", typ: "wort", text: "hand",  de: "Hand",  bild: "✋", stufe: "M" },
-  { id: "en-nose",  teil: "en", typ: "wort", text: "nose",  de: "Nase",  bild: "👃", stufe: "M", varianten: ["knows"] },
-  { id: "en-eye",   teil: "en", typ: "wort", text: "eye",   de: "Auge",  bild: "👁️", stufe: "M", varianten: ["i", "aye"] },
-  { id: "en-ear",   teil: "en", typ: "wort", text: "ear",   de: "Ohr",   bild: "👂", stufe: "M" },
-  { id: "en-mouth", teil: "en", typ: "wort", text: "mouth", de: "Mund",  bild: "👄", stufe: "M" },
-  { id: "en-foot",  teil: "en", typ: "wort", text: "foot",  de: "Fuß",   bild: "🦶", stufe: "M" },
-  { id: "en-hair",  teil: "en", typ: "wort", text: "hair",  de: "Haare", bild: "💇‍♀️", stufe: "M", varianten: ["hare"] },
-  { id: "en-tooth", teil: "en", typ: "wort", text: "tooth", de: "Zahn",  bild: "🦷", stufe: "M" },
-  // Essen
-  { id: "en-strawberry", teil: "en", typ: "wort", text: "strawberry", de: "Erdbeere",   bild: "🍓", stufe: "M" },
-  { id: "en-carrot",     teil: "en", typ: "wort", text: "carrot",     de: "Möhre",      bild: "🥕", stufe: "M" },
-  { id: "en-soup",       teil: "en", typ: "wort", text: "soup",       de: "Suppe",      bild: "🍲", stufe: "M" },
-  { id: "en-chocolate",  teil: "en", typ: "wort", text: "chocolate",  de: "Schokolade", bild: "🍫", stufe: "M" },
-  // Zuhause und unterwegs
-  { id: "en-door",   teil: "en", typ: "wort", text: "door",   de: "Tür",      bild: "🚪", stufe: "M" },
-  { id: "en-chair",  teil: "en", typ: "wort", text: "chair",  de: "Stuhl",    bild: "🪑", stufe: "M" },
-  { id: "en-window", teil: "en", typ: "wort", text: "window", de: "Fenster",  bild: "🪟", stufe: "M" },
-  { id: "en-train",  teil: "en", typ: "wort", text: "train",  de: "Zug",      bild: "🚂", stufe: "M" },
-  { id: "en-bike",   teil: "en", typ: "wort", text: "bike",   de: "Fahrrad",  bild: "🚲", stufe: "M", varianten: ["bicycle"] },
-  { id: "en-boat",   teil: "en", typ: "wort", text: "boat",   de: "Boot",     bild: "⛵", stufe: "M" },
-  { id: "en-plane",  teil: "en", typ: "wort", text: "plane",  de: "Flugzeug", bild: "✈️", stufe: "M", varianten: ["aeroplane", "airplane"] },
-  // Anziehen
-  { id: "en-dress",  teil: "en", typ: "wort", text: "dress",  de: "Kleid",      bild: "👗", stufe: "M" },
-  { id: "en-gloves", teil: "en", typ: "wort", text: "gloves", de: "Handschuhe", bild: "🧤", stufe: "M", varianten: ["glove"] },
-  { id: "en-scarf",  teil: "en", typ: "wort", text: "scarf",  de: "Schal",      bild: "🧣", stufe: "M" },
-  // Natur und Wetter
-  { id: "en-tree",    teil: "en", typ: "wort", text: "tree",    de: "Baum",       bild: "🌳", stufe: "M" },
-  { id: "en-flower",  teil: "en", typ: "wort", text: "flower",  de: "Blume",      bild: "🌸", stufe: "M" },
-  { id: "en-rain",    teil: "en", typ: "wort", text: "rain",    de: "Regen",      bild: "🌧️", stufe: "M" },
-  { id: "en-snow",    teil: "en", typ: "wort", text: "snow",    de: "Schnee",     bild: "❄️", stufe: "M" },
-  { id: "en-rainbow", teil: "en", typ: "wort", text: "rainbow", de: "Regenbogen", bild: "🌈", stufe: "M" },
-  { id: "en-cloud",   teil: "en", typ: "wort", text: "cloud",   de: "Wolke",      bild: "☁️", stufe: "M" },
-  // Farben und Zahlen
-  { id: "en-purple", teil: "en", typ: "wort", text: "purple", de: "lila",    bild: "🟣", stufe: "M" },
-  { id: "en-orange", teil: "en", typ: "wort", text: "orange", de: "orange",  bild: "🟠", stufe: "M" },
-  { id: "en-black",  teil: "en", typ: "wort", text: "black",  de: "schwarz", bild: "⚫", stufe: "M" },
-  { id: "en-white",  teil: "en", typ: "wort", text: "white",  de: "weiß",    bild: "⚪", stufe: "M" },
-  { id: "en-one",    teil: "en", typ: "wort", text: "one",    de: "eins",    bild: "1️⃣", stufe: "M", varianten: ["won"] },
-  { id: "en-two",    teil: "en", typ: "wort", text: "two",    de: "zwei",    bild: "2️⃣", stufe: "M", varianten: ["to", "too"] },
-  { id: "en-three",  teil: "en", typ: "wort", text: "three",  de: "drei",    bild: "3️⃣", stufe: "M" },
-  { id: "en-four",   teil: "en", typ: "wort", text: "four",   de: "vier",    bild: "4️⃣", stufe: "M", varianten: ["for"] },
-  { id: "en-five",   teil: "en", typ: "wort", text: "five",   de: "fünf",    bild: "5️⃣", stufe: "M" },
-
-  /* ---------- English: Sätze – Einfach (kurze Alltagssätze) ---------- */
-  { id: "en-s-hello",     teil: "en", typ: "satz", text: "Hello!",          de: "Hallo!",           bild: "👋",   stufe: "E" },
-  { id: "en-s-goodbye",   teil: "en", typ: "satz", text: "Goodbye!",        de: "Tschüss!",         bild: "🚶‍♀️👋", stufe: "E", varianten: ["bye", "bye bye"] },
-  { id: "en-s-thankyou",  teil: "en", typ: "satz", text: "Thank you!",      de: "Danke!",           bild: "🙏",   stufe: "E", varianten: ["thanks"] },
-  { id: "en-s-please",    teil: "en", typ: "satz", text: "Please!",         de: "Bitte!",           bild: "🥺",   stufe: "E" },
-  { id: "en-s-yesplease", teil: "en", typ: "satz", text: "Yes, please!",    de: "Ja, bitte!",       bild: "👍",   stufe: "E" },
-  { id: "en-s-nothanks",  teil: "en", typ: "satz", text: "No, thank you!",  de: "Nein, danke!",     bild: "🙅‍♀️", stufe: "E" },
-  { id: "en-s-morning",   teil: "en", typ: "satz", text: "Good morning!",   de: "Guten Morgen!",    bild: "🌅",   stufe: "E" },
-  { id: "en-s-night",     teil: "en", typ: "satz", text: "Good night!",     de: "Gute Nacht!",      bild: "🌙😴", stufe: "E" },
-  { id: "en-s-sorry",     teil: "en", typ: "satz", text: "Sorry!",          de: "Entschuldigung!",  bild: "😔",   stufe: "E" },
-  { id: "en-s-hungry",    teil: "en", typ: "satz", text: "I am hungry.",    de: "Ich habe Hunger.", bild: "😋",   stufe: "E" },
-  { id: "en-s-thirsty",   teil: "en", typ: "satz", text: "I am thirsty.",   de: "Ich habe Durst.",  bild: "🥤",   stufe: "E" },
-  { id: "en-s-tired",     teil: "en", typ: "satz", text: "I am tired.",     de: "Ich bin müde.",    bild: "😴",   stufe: "E" },
-  { id: "en-s-happy",     teil: "en", typ: "satz", text: "I am happy.",     de: "Ich bin fröhlich.", bild: "😊",  stufe: "E" },
-  { id: "en-s-waterplease", teil: "en", typ: "satz", text: "Water, please!", de: "Wasser, bitte!",  bild: "💧",   stufe: "E" },
-  { id: "en-s-breadplease", teil: "en", typ: "satz", text: "Bread, please!", de: "Brot, bitte!",    bild: "🍞",   stufe: "E" },
-  { id: "en-s-more",      teil: "en", typ: "satz", text: "More, please!",   de: "Mehr, bitte!",     bild: "🙋‍♀️", stufe: "E" },
-  { id: "en-s-play",      teil: "en", typ: "satz", text: "Let's play!",     de: "Lass uns spielen!", bild: "🎲",  stufe: "E" },
-  { id: "en-s-loveyou",   teil: "en", typ: "satz", text: "I love you.",     de: "Ich hab dich lieb.", bild: "❤️", stufe: "E" },
-
-  /* ---------- English: Sätze – Mittel ---------- */
-  { id: "en-s-sad",       teil: "en", typ: "satz", text: "I am sad.",              de: "Ich bin traurig.",         bild: "😢", stufe: "M" },
-  { id: "en-s-birthday",  teil: "en", typ: "satz", text: "Happy birthday!",        de: "Alles Gute zum Geburtstag!", bild: "🎂", stufe: "M" },
-  { id: "en-s-howareyou", teil: "en", typ: "satz", text: "How are you?",           de: "Wie geht es dir?",         bild: "🙂", stufe: "M" },
-  { id: "en-s-fine",      teil: "en", typ: "satz", text: "I am fine, thank you.",  de: "Mir geht es gut, danke.",  bild: "😊", stufe: "M" },
-  { id: "en-s-myname",    teil: "en", typ: "satz", text: "My name is {name}.",     de: "Ich heiße {name}.",        bild: "👧", stufe: "M", brauchtName: true },
-  { id: "en-s-teddy",     teil: "en", typ: "satz", text: "Where is my teddy?",     de: "Wo ist mein Teddy?",       bild: "🧸", stufe: "M" },
-  { id: "en-s-apples",    teil: "en", typ: "satz", text: "I like apples.",         de: "Ich mag Äpfel.",           bild: "🍎", stufe: "M" },
-  { id: "en-s-cat",       teil: "en", typ: "satz", text: "I have a cat.",          de: "Ich habe eine Katze.",     bild: "🐱", stufe: "M" },
-  { id: "en-s-raining",   teil: "en", typ: "satz", text: "It is raining.",         de: "Es regnet.",               bild: "🌧️", stufe: "M" },
-  { id: "en-s-sunny",     teil: "en", typ: "satz", text: "It is sunny.",           de: "Die Sonne scheint.",       bild: "☀️", stufe: "M" },
-  { id: "en-s-hands",     teil: "en", typ: "satz", text: "Wash your hands!",       de: "Wasch deine Hände!",       bild: "🧼", stufe: "M" },
-  { id: "en-s-teeth",     teil: "en", typ: "satz", text: "Brush your teeth!",      de: "Putz deine Zähne!",        bild: "🪥", stufe: "M" },
-  { id: "en-s-bedtime",   teil: "en", typ: "satz", text: "Time for bed!",          de: "Zeit fürs Bett!",          bild: "🛏️", stufe: "M" },
-  { id: "en-s-letsgo",    teil: "en", typ: "satz", text: "Let's go!",              de: "Los geht's!",              bild: "🏃‍♀️", stufe: "M" },
-  { id: "en-s-comehere",  teil: "en", typ: "satz", text: "Come here, please!",     de: "Komm bitte her!",          bild: "🤗", stufe: "M" },
-  { id: "en-s-wantplay",  teil: "en", typ: "satz", text: "I want to play.",        de: "Ich will spielen.",        bild: "🪀", stufe: "M" },
-
-  /* ---------- English: Sätze – Schwer ---------- */
-  { id: "en-s-water",     teil: "en", typ: "satz", text: "Can I have some water, please?", de: "Kann ich bitte Wasser haben?",  bild: "💧", stufe: "S" },
-  { id: "en-s-breadhave", teil: "en", typ: "satz", text: "Can I have some bread, please?", de: "Kann ich bitte Brot haben?",    bild: "🍞", stufe: "S" },
-  { id: "en-s-cake",      teil: "en", typ: "satz", text: "Can I have some cake, please?",  de: "Kann ich bitte Kuchen haben?",  bild: "🍰", stufe: "S" },
-  { id: "en-s-applelike", teil: "en", typ: "satz", text: "I would like an apple, please.",  de: "Ich hätte gern einen Apfel, bitte.", bild: "🍎", stufe: "S" },
-  { id: "en-s-unicorn",   teil: "en", typ: "satz", text: "I love my unicorn.",             de: "Ich hab mein Einhorn lieb.",   bild: "🦄❤️", stufe: "S" },
-  { id: "en-s-mum",       teil: "en", typ: "satz", text: "This is my mum.",                de: "Das ist meine Mama.",          bild: "👩", stufe: "S" },
-  { id: "en-s-house",     teil: "en", typ: "satz", text: "This is my house.",              de: "Das ist mein Haus.",           bild: "🏠", stufe: "S" },
-  { id: "en-s-rainbow",   teil: "en", typ: "satz", text: "I can see a rainbow.",           de: "Ich sehe einen Regenbogen.",   bild: "🌈", stufe: "S" },
-  { id: "en-s-sun",       teil: "en", typ: "satz", text: "The sun is yellow.",             de: "Die Sonne ist gelb.",          bild: "☀️", stufe: "S" },
-  { id: "en-s-sky",       teil: "en", typ: "satz", text: "The sky is blue.",               de: "Der Himmel ist blau.",         bild: "🌤️", stufe: "S" },
-  { id: "en-s-run",       teil: "en", typ: "satz", text: "I can run fast.",                de: "Ich kann schnell rennen.",     bild: "🏃‍♀️", stufe: "S" },
-  { id: "en-s-pink",      teil: "en", typ: "satz", text: "I like the colour pink.",        de: "Ich mag die Farbe Rosa.",      bild: "🩷", stufe: "S", varianten: ["color"] },
-  { id: "en-s-shoes",     teil: "en", typ: "satz", text: "Where are my shoes?",            de: "Wo sind meine Schuhe?",        bild: "👟", stufe: "S" },
-  { id: "en-s-help",      teil: "en", typ: "satz", text: "Can you help me, please?",       de: "Kannst du mir bitte helfen?",  bild: "🙋‍♀️", stufe: "S" },
-  { id: "en-s-outside",   teil: "en", typ: "satz", text: "I want to go outside.",          de: "Ich will nach draußen.",       bild: "🌳", stufe: "S" },
-  { id: "en-s-coat",      teil: "en", typ: "satz", text: "Put on your coat, please.",      de: "Zieh bitte deine Jacke an.",   bild: "🧥", stufe: "S" }
-];
+window.INHALT_FEHLER = [];
+window.addEventListener("error", function (e) {
+  var t = e.target;
+  if (t && t.tagName === "SCRIPT") {
+    INHALT_FEHLER.push({ datei: (t.getAttribute("src") || "").split("/").pop(), text: "Die Datei wurde nicht gefunden." });
+    return;
+  }
+  var datei = String(e.filename || "").split("/").pop().split("?")[0];
+  if (/^(einstellungen|inhalte-abc|inhalte-english)\.js$/.test(datei)) INHALT_FEHLER.push({ datei: datei, zeile: e.lineno, text: String(e.message || "Fehler").replace(/^Uncaught /, "") });
+}, true);
+</script>
+<script src="einstellungen.js"></script>
+<script src="inhalte-abc.js"></script>
+<script src="inhalte-english.js"></script>
+<script>
+/* Inhalte prüfen. Fehlerhafte Karten werden übersprungen; ist eine ganze Datei kaputt,
+   spielt die App mit der zuletzt funktionierenden Fassung weiter (auf dem Gerät gesichert). */
+window.INHALT_HINWEISE = [];   // für Einstellungen › Bibliothek
+window.INHALT_FATAL = false;
+(function () {
+  var SICHERUNG = "einhornABC.inhalte";
+  var PFLICHT = ["kartenProRunde", "bewertung", "stationen", "mischung", "auswahl", "trainingRichtigBisFertig", "sprechversuche",
+    "pauseNachNochmalMs", "hoerDauerMs", "lautVarianten", "enAutoVorlesen", "naechsteKarteMs", "szeneDauerMs", "tempo",
+    "stimmhoehe", "lobDe", "lobEn", "szenenLob", "namensVorschlaege"];
+  var hin = INHALT_HINWEISE;
+  function fehlerVon(datei) { return INHALT_FEHLER.filter(function (f) { return f.datei === datei; }); }
+  function fehlerText(f) { return f.datei + (f.zeile ? ", Zeile " + f.zeile : "") + ": " + f.text; }
+  var sicherung = null;
+  try { var roh = localStorage.getItem(SICHERUNG); if (roh) sicherung = JSON.parse(roh, function (k, v) { return v === "__unendlich__" ? Infinity : v; }); } catch (e) { sicherung = null; }
+  var fatal = [];
+  function teil(datei, wert, pruef, schluessel) {
+    var fe = fehlerVon(datei);
+    if (fe.length || !pruef(wert)) {
+      var grund = fe.length ? fe.map(fehlerText).join(" · ") : datei + ": Der Inhalt ist unvollständig.";
+      if (sicherung && sicherung[schluessel]) { hin.push(grund + " – die App benutzt bis zur Korrektur die zuletzt funktionierende Fassung."); return sicherung[schluessel]; }
+      fatal.push(grund); return null;
+    }
+    return wert;
+  }
+  var cfg = teil("einstellungen.js", window.CONFIG, function (c) { return c && typeof c === "object" && Array.isArray(c.stationen) && Array.isArray(c.bewertung); }, "config");
+  if (cfg) {
+    var fehlt = PFLICHT.filter(function (k) { return !(k in cfg); });
+    if (fehlt.length) {
+      if (sicherung && sicherung.config) { fehlt.forEach(function (k) { cfg[k] = sicherung.config[k]; }); hin.push("einstellungen.js: Es fehlt " + fehlt.join(", ") + " – dafür gilt der zuletzt funktionierende Wert."); }
+      else fatal.push("einstellungen.js: Es fehlt " + fehlt.join(", ") + ".");
+    }
+  }
+  var abc = teil("inhalte-abc.js", window.INHALTE_ABC, Array.isArray, "abc");
+  var en = teil("inhalte-english.js", window.INHALTE_ENGLISH, Array.isArray, "en");
+  window.CONFIG = cfg; 
+  if (fatal.length || !cfg || !abc || !en) {
+    window.INHALT_FATAL = true;
+    document.addEventListener("DOMContentLoaded", function () {
+      document.body.innerHTML = '<div style="font:17px/1.5 ui-rounded,system-ui,sans-serif;max-width:620px;margin:40px auto;padding:0 20px;color:#4A3A48">'
+        + '<p style="font-size:48px;margin:0">🦄🔧</p><h1 style="font-size:24px">Einhorn-ABC braucht eine kleine Reparatur</h1>'
+        + '<p>In einer Inhaltsdatei steckt ein Fehler. Bitte die Datei auf GitHub öffnen und die genannte Zeile prüfen (oft fehlt ein Komma oder ein Anführungszeichen). Danach die App neu öffnen.</p><ul>'
+        + fatal.map(function (t) { return "<li>" + String(t).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }) + "</li>"; }).join("") + "</ul></div>";
+    });
+    return;
+  }
+  // Karten einzeln prüfen
+  var ids = {};
+  function karten(liste, datei, spiel) {
+    var aus = [];
+    liste.forEach(function (k, i) {
+      var nr = "Karte " + (i + 1) + (k && k.id ? " („" + k.id + "“)" : "");
+      var fehlt = [];
+      if (!k || typeof k !== "object") { hin.push(datei + ": " + nr + " ist keine Karte und wurde übersprungen."); return; }
+      if (typeof k.id !== "string" || !k.id) fehlt.push("id");
+      if (["E", "M", "S"].indexOf(k.stufe) < 0) fehlt.push("stufe");
+      if (spiel === "de") {
+        if (["buchstabe", "laut"].indexOf(k.typ) < 0) fehlt.push("typ");
+        if (typeof k.zeichen !== "string" || !k.zeichen) fehlt.push("zeichen");
+        if (k.woerter != null && !(Array.isArray(k.woerter) && k.woerter.every(function (w) { return Array.isArray(w) && typeof w[0] === "string" && w[0]; }))) fehlt.push("woerter");
+      } else {
+        if (["wort", "satz"].indexOf(k.typ) < 0) fehlt.push("typ");
+        if (typeof k.text !== "string" || !k.text) fehlt.push("text");
+        if (k.de == null) k.de = "";
+        if (k.bild == null) k.bild = "";
+      }
+      if (fehlt.length) { hin.push(datei + ": " + nr + " wurde übersprungen – bitte prüfen: " + fehlt.join(", ") + "."); return; }
+      if (ids[k.id]) { hin.push(datei + ": " + nr + " wurde übersprungen – die id gibt es schon."); return; }
+      ids[k.id] = true; k.teil = spiel; aus.push(k);
+    });
+    return aus;
+  }
+  window.INHALTE_ABC = karten(abc, "inhalte-abc.js", "de");
+  window.INHALTE_ENGLISH = karten(en, "inhalte-english.js", "en");
+  window.BIBLIOTHEK = INHALTE_ABC.concat(INHALTE_ENGLISH);
+  // Funktionierende Fassung auf dem Gerät sichern (nur wenn sich etwas geändert hat)
+  try {
+    var neu = JSON.stringify({ config: cfg, abc: INHALTE_ABC, en: INHALTE_ENGLISH }, function (k, v) { return v === Infinity ? "__unendlich__" : v; });
+    if (localStorage.getItem(SICHERUNG) !== neu) localStorage.setItem(SICHERUNG, neu);
+  } catch (e) { /* Speicher gesperrt */ }
+})();
 </script>
 <style>
 /* ===================== Grundlagen ===================== */
@@ -802,6 +424,17 @@ svg { display: block; }
 }
 .berg-svg .station circle { transition: transform .3s; }
 .berg-svg .station.erreicht circle.ring { fill: #FFF6D8; stroke: var(--gold); }
+.berg-svg .station .schloss { display: none; }
+.berg-svg.antippbar .station, .berg-svg.antippbar .reiter { cursor: pointer; }
+.berg-svg.antippbar .station.gesperrt .schloss { display: inline; }
+.berg-svg.antippbar .station.gesperrt circle.ring { stroke-dasharray: 4 4; }
+.berg-svg .station.wackeln > circle.ring, .berg-svg .station.wackeln > text:not(.label) { animation: wackeln .45s ease; transform-box: fill-box; transform-origin: center; }
+@keyframes wackeln { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+.hinweisliste { margin: 4px 0 8px; padding-left: 22px; }
+.aufn-reihe { gap: 10px; }
+.aufn-wahl { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; font-size: 17px; }
+.aufn-wahl input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: #9C86D4; }
+.hinweisliste li { margin: 4px 0; }
 .berg-svg .station.puls circle.ring { animation: puls .7s ease 3; transform-box: fill-box; transform-origin: center; }
 @keyframes puls { 50% { transform: scale(1.35); } }
 
@@ -1010,6 +643,7 @@ select.feld { -webkit-appearance: none; appearance: none; }
     <div class="intro-rechts">
     <div class="sprechblase" id="intro-text">Hallo! Tippe auf den Knopf.</div>
     <button class="knopf los-knopf" id="intro-los" aria-label="Los geht's">▶️</button>
+    <button class="knopf rund versteckt" id="intro-home" aria-label="Zurück zum Start" style="position:absolute; top:calc(14px + env(safe-area-inset-top, 0px)); left:calc(14px + env(safe-area-inset-left, 0px)); z-index:3">🏠</button>
     <div class="namensfeld versteckt" id="intro-name">
       <input id="intro-eingabe" type="text" maxlength="16" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Name des Einhorns">
       <div class="chips" id="intro-chips"></div>
@@ -1140,6 +774,8 @@ select.feld { -webkit-appearance: none; appearance: none; }
   <input type="file" id="datei-import" accept="application/json,.json" class="versteckt">
 </div>
 <script>
+// Fehlen die Inhaltsdateien ganz, zeigt der Lader oben eine Reparatur-Seite – dann hier nicht weiterlaufen.
+if (window.INHALT_FATAL) throw new Error("Einhorn-ABC: Inhaltsdateien fehlerhaft");
 /* ---------- Grafiken (eigene SVGs) ---------- */
 const FARBE = {
   linie: "#5B4458", weiss: "#FFFFFF", schatten: "#F2E8F4",
@@ -1339,7 +975,7 @@ function appSymbolSVG() {
    Einhorn-ABC – Programm
    (Inhalte und Einstellungen stehen oben in CONFIG und BIBLIOTHEK)
    ===================================================================== */
-const APP_VERSION = "Version 4.2";
+const APP_VERSION = "Version 4.3";
 const DATEN_STAND = 2;
 const SPEICHER_SCHLUESSEL = "einhornABC.v1";
 const TESTMODUS = /[?&]test\b/.test(location.search);
@@ -1380,6 +1016,7 @@ function standardZustand() {
     letzteRunde: { abc: [], en: [] },
     fehler: { abc: [], en: [] },     // [{ id, seit, richtig }]
     ausgeblendet: {},                // id -> true
+    aufnahmeDe: "auto", aufnahmeEn: "auto",   // aufgenommene Stimme: "auto" = erste, "ipad" = keine, sonst id
     stimmeDeTempo: 1, stimmeDeHoehe: CONFIG.stimmhoehe,   // Faktor auf das Grundtempo, Stimmhöhe
     stimmeEnTempo: 1, stimmeEnHoehe: CONFIG.stimmhoehe,
     fotos: {},                       // "id|wortIndex" -> true
@@ -1421,7 +1058,8 @@ function laden() {
   }
   catch (e) { S = standardZustand(); }
 }
-function speichere() { try { localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(S)); } catch (e) { /* Speicher voll oder gesperrt */ } }
+let speichernGesperrt = false;   // beim Zurücksetzen: nichts mehr zurückschreiben
+function speichere() { if (speichernGesperrt) return; try { localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(S)); } catch (e) { /* Speicher voll oder gesperrt */ } }
 
 const DB = {
   db: null, kaputt: false,
@@ -1777,6 +1415,102 @@ const Ton = {
    Vorlesen (speechSynthesis)
    ===================================================================== */
 const NEUHEITS_STIMMEN = /eloquence|grandma|grandpa|rocko|shelley|flo\b|reed|sandy|eddy|bad news|bells|bubbles|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|bahh|boing|cellos|good news|junior|ralph|fred|kathy|hysterical/i;
+/* =====================================================================
+   Aufgenommene Stimmen (stimmen.json + stimme-….bin)
+   Freie KI-Stimmen, vorab aufgenommen: klingen natürlicher als die iPad-Stimmen
+   und funktionieren offline. Alles, was nicht aufgenommen ist (neue Wörter aus
+   den Inhaltsdateien, andere Namen), spricht weiter die iPad-Stimme.
+   ===================================================================== */
+const Aufnahmen = {
+  liste: [], pakete: {}, puffer: new Map(), quelle: null, nr: 0, timer: [], fertig: null,
+  schluessel(t) { return String(t).trim().replace(/\s+/g, " "); },
+  laden() {
+    if (this.geladen) return this.geladen;
+    this.geladen = fetch("stimmen.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        this.liste = d && Array.isArray(d.stimmen) ? d.stimmen.filter((v) => v && v.id && v.datei && v.eintraege && v.sprache) : [];
+        ["de", "en"].forEach((sp) => { const v = this.gewaehlt(sp); if (v) this.paket(v); });
+        this.aufraeumen();
+        if (aktuellerScreen === "s-einst" && einstSeite === "sounds") einstellungenZeichnen("sounds");
+      })
+      .catch(() => { this.liste = []; });
+    return this.geladen;
+  },
+  vonSprache(sp) { return this.liste.filter((v) => v.sprache === sp); },
+  // "auto" = erste aufgenommene Stimme, "ipad" = nur die iPad-Stimme, sonst die id
+  gewaehlt(sp) {
+    const w = sp === "en" ? S.aufnahmeEn : S.aufnahmeDe;
+    if (w === "ipad") return null;
+    const l = this.vonSprache(sp);
+    return l.find((v) => v.id === w) || l[0] || null;
+  },
+  paket(v) {
+    if (!this.pakete[v.id]) {
+      this.pakete[v.id] = fetch(v.datei).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null)
+        .then((b) => { if (!b) delete this.pakete[v.id]; return b; });
+    }
+    return this.pakete[v.id];
+  },
+  eintrag(v, text, langsam) {
+    const k = this.schluessel(text);
+    if (langsam && v.eintraege["🐌" + k]) return { k: "🐌" + k, e: v.eintraege["🐌" + k] };
+    return v.eintraege[k] ? { k, e: v.eintraege[k] } : null;
+  },
+  hat(sp, text, langsam) { const v = this.gewaehlt(sp); return !!(v && this.eintrag(v, text, langsam)); },
+  async dekodieren(v, k, e) {
+    const id = v.id + "|" + k;
+    if (this.puffer.has(id)) { const b = this.puffer.get(id); this.puffer.delete(id); this.puffer.set(id, b); return b; }
+    const paket = await this.paket(v); if (!paket) return null;
+    Ton.init(); const ctx = Ton.ctx; if (!ctx) return null;
+    const stueck = paket.slice(e[0], e[0] + e[1]);
+    const b = await new Promise((res) => { try { const p = ctx.decodeAudioData(stueck, res, () => res(null)); if (p && p.catch) p.catch(() => res(null)); } catch (er) { res(null); } });
+    if (b) { this.puffer.set(id, b); if (this.puffer.size > 80) this.puffer.delete(this.puffer.keys().next().value); }
+    return b;
+  },
+  // Spielt den Text ab. Ergebnis: true = gespielt, false = keine Aufnahme/kein Ton möglich (dann die iPad-Stimme)
+  async spiele(sp, text, opt = {}, stimme = null) {
+    const v = stimme || this.gewaehlt(sp); if (!v) return false;
+    const t = this.eintrag(v, text, opt.langsam); if (!t) return false;
+    this.stop(); const nr = this.nr;
+    Ton.init(); const ctx = Ton.ctx; if (!ctx) return false;
+    if (ctx.state !== "running") { try { await ctx.resume(); } catch (er) { } }
+    if (ctx.state !== "running") return false;
+    const buf = await this.dekodieren(v, t.k, t.e);
+    if (!buf) return false;
+    if (nr !== this.nr) return true;          // inzwischen gestoppt – nicht mehr abspielen
+    if (!this.gain) { this.gain = ctx.createGain(); this.gain.gain.value = 1; this.gain.connect(ctx.destination); }
+    const q = ctx.createBufferSource(); q.buffer = buf; q.connect(this.gain);
+    this.quelle = q;
+    return new Promise((res) => {
+      let erledigt = false;
+      const ende = () => { if (erledigt) return; erledigt = true; this.timer.forEach(clearTimeout); this.timer = []; if (this.quelle === q) this.quelle = null; this.fertig = null; res(true); };
+      this.fertig = ende;
+      q.onended = ende;
+      // Wort-Hervorhebung (englische Sätze): Zeitpunkte nach Buchstaben-Anteil schätzen
+      if (opt.beiWort) {
+        const text2 = String(text); const dauer = buf.duration * 1000;
+        for (const m of text2.matchAll(/\S+/g)) this.timer.push(setTimeout(() => opt.beiWort({ name: "word", charIndex: m.index }), dauer * 0.92 * m.index / Math.max(1, text2.length)));
+        this.timer.push(setTimeout(() => opt.beiWort({ name: "word", charIndex: -1 }), dauer));
+      }
+      this.timer.push(setTimeout(ende, buf.duration * 1000 + 1500));   // Sicherheitsnetz
+      try { q.start(); } catch (er) { ende(); }
+    });
+  },
+  stop() {
+    this.nr++;
+    const q = this.quelle; this.quelle = null;
+    if (q) { try { q.onended = null; q.stop(); } catch (e) { } }
+    if (this.fertig) this.fertig();
+  },
+  // Stimmenpakete, die nicht mehr in stimmen.json stehen, aus dem Offline-Speicher löschen
+  aufraeumen() {
+    if (!("caches" in window) || !this.liste.length) return;
+    const behalten = new Set(this.liste.map((v) => new URL(v.datei, location.href).href));
+    caches.open("einhorn-abc-stimmen").then((c) => c.keys().then((ks) => ks.forEach((k) => { if (!behalten.has(k.url)) c.delete(k); }))).catch(() => { });
+  }
+};
+
 const Sprache = {
   stimmen: [], aktiv: null,
   laden() {
@@ -1809,7 +1543,19 @@ const Sprache = {
     if (sp === "en") return l.find((v) => /^en[-_]gb/i.test(v.lang) && stimmenInfo(v).q === "standard") || null;
     return null;
   },
+  // Erst die aufgenommene Stimme (falls vorhanden), sonst die iPad-Stimme
   sprich(text, opt = {}) {
+    if (!text) return Promise.resolve();
+    const sp = opt.sprache === "en" ? "en" : "de";
+    const langsam = sp === "en" && opt.tempo && opt.tempo <= CONFIG.tempo.enLangsam + 0.01;
+    if (Aufnahmen.hat(sp, text, langsam)) {
+      try { if ("speechSynthesis" in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel(); } catch (e) { }
+      return Aufnahmen.spiele(sp, text, Object.assign({}, opt, { langsam })).then((ok) => (ok ? undefined : this.sprichIpad(text, opt)));
+    }
+    Aufnahmen.stop();
+    return this.sprichIpad(text, opt);
+  },
+  sprichIpad(text, opt = {}) {
     return new Promise((res) => {
       if (!text || !("speechSynthesis" in window)) return res();
       const s = window.speechSynthesis; const en = opt.sprache === "en";
@@ -1828,17 +1574,20 @@ const Sprache = {
       try { if (s.speaking || s.pending) s.cancel(); s.speak(u); } catch (e) { ende(); }
     });
   },
-  stop() { try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) { } },
+  stop() { Aufnahmen.stop(); try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) { } },
   entsperren() {
     try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } catch (e) { }
   }
 };
 let entsperrt = false, jingleGespielt = false, jingleZeit = -1e9;
+let jingleLaeuft = Promise.resolve();
 function startJingle() {
   jingleZeit = performance.now();
-  Ton.jingle().then((ms) => { if (ms) jingleGespielt = true; });
+  jingleLaeuft = Ton.jingle().then((ms) => { if (ms) jingleGespielt = true; return warte(ms || 0); });
 }
 function entsperren() {
+  // iPadOS: Töne und aufgenommene Stimmen auch bei eingeschaltetem Stumm-Modus abspielen
+  try { if (navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback"; } catch (e) { }
   Ton.entsperren();
   if (!entsperrt) { entsperrt = true; Sprache.entsperren(); Ton.musikStart(); }
 }
@@ -1916,12 +1665,21 @@ function nachHause() { Sprache.stop(); R.aktiv = false; zeige("s-start"); startZ
 /* =====================================================================
    Erster Start
    ===================================================================== */
-function introStart() {
+function introStart(nochmal = false) {
   zeige("s-intro");
   $("#intro-einhorn").innerHTML = einhornSVG();
   $("#intro-text").textContent = "Hallo! Tippe auf den Knopf.";
+  // Zustand zurücksetzen (wichtig beim „Einhorn neu kennenlernen“)
+  $("#intro-los").classList.remove("versteckt");
+  $("#intro-name").classList.add("versteckt");
+  $("#intro-eingabe").value = "";
+  // Hat das Einhorn schon einen Namen, kann man ohne Änderung zurück zum Start
+  $("#intro-home").classList.toggle("versteckt", !(nochmal && S.einhornName));
+  $("#intro-home").onclick = () => { Sprache.stop(); zeige("s-start"); startZeichnen(); };
   const chips = $("#intro-chips"); chips.innerHTML = "";
-  CONFIG.namensVorschlaege.forEach((n) => {
+  const namen = CONFIG.namensVorschlaege.slice();
+  if (nochmal && S.einhornName && !namen.includes(S.einhornName)) namen.unshift(S.einhornName);
+  namen.forEach((n) => {
     const b = document.createElement("button"); b.className = "chip"; b.textContent = n;
     b.onclick = () => { $("#intro-eingabe").value = n; Sprache.sprich(n); };
     chips.appendChild(b);
@@ -1930,7 +1688,7 @@ function introStart() {
     entsperren();
     $("#intro-los").classList.add("versteckt");
     const svg = $("#intro-einhorn .einhorn"); einhornAnim(svg, "huepfen", 900);
-    const satz = "Hallo! Ich bin dein Einhorn. Ich habe noch keinen Namen. Wie soll ich heißen?";
+    const satz = CONFIG.introFrage || "Hallo! Ich bin dein Einhorn. Ich habe noch keinen Namen. Wie soll ich heißen?";
     $("#intro-text").textContent = satz;
     $("#intro-name").classList.remove("versteckt");
     $("#intro-mikro").classList.toggle("versteckt", !(S.spracherkennung && srStatus().ok));
@@ -1944,12 +1702,12 @@ function introStart() {
   };
   $("#intro-ok").onclick = async () => {
     const name = $("#intro-eingabe").value.trim();
-    if (!name) { Sprache.sprich("Bitte gib mir einen Namen."); $("#intro-eingabe").focus(); return; }
+    if (!name) { Sprache.sprich(CONFIG.introNameFehlt || "Bitte gib mir einen Namen."); $("#intro-eingabe").focus(); return; }
     $("#intro-eingabe").blur();
     S.einhornName = name; speichere();
     const svg = $("#intro-einhorn .einhorn"); einhornAnim(svg, "huepfen", 900); Ton.spiele("richtig");
     $("#intro-text").textContent = `Juhu! Ich heiße ${name}!`;
-    await Sprache.sprich(`Juhu! Ich heiße ${name}! Lass uns zusammen spielen!`);
+    await Sprache.sprich(ersetze(CONFIG.introFertig || "Juhu! Ich heiße {einhorn}! Lass uns zusammen spielen!"));
     zeige("s-start"); startZeichnen(); startJingle();
   };
 }
@@ -1967,12 +1725,26 @@ function startZeichnen() {
   bergReiterSetzen($("#start-berg svg"), S.berg.punkte);
   $("#flagge-start").innerHTML = flaggeUK("start");
 }
+let letzterEinhornSatz = -1, einhornSprichtNr = 0;
+async function einhornSagtNamen() {
+  const saetze = Array.isArray(CONFIG.einhornSaetze) && CONFIG.einhornSaetze.length ? CONFIG.einhornSaetze : ["Ich bin {einhorn}!"];
+  let i = Math.floor(Math.random() * saetze.length);
+  if (saetze.length > 1 && i === letzterEinhornSatz) i = (i + 1) % saetze.length;
+  letzterEinhornSatz = i;
+  const nr = ++einhornSprichtNr;
+  // Erster Tipp nach dem Öffnen startet den Jingle – das Einhorn spricht danach
+  const gewartet = performance.now() - jingleZeit < 4000;
+  if (gewartet) await Promise.race([jingleLaeuft, warte(4000)]);
+  if (nr !== einhornSprichtNr || aktuellerScreen !== "s-start") return;
+  if (gewartet) einhornAnim($("#start-einhorn .einhorn"), "huepfen", 900);
+  await Sprache.sprich(ersetze(saetze[i]));
+}
 function startEinrichten() {
-  // Einhorn antippen: es hüpft, und der Glockenspiel-Jingle erklingt (ohne Begrüßungsansage)
+  // Einhorn antippen: es hüpft und sagt seinen Namen (Sätze in einstellungen.js › einhornSaetze)
   $("#start-einhorn").addEventListener("click", (e) => {
     if (!e.target.closest(".einhorn")) return;
     einhornAnim($("#start-einhorn .einhorn"), "huepfen", 900);
-    if (performance.now() - jingleZeit > 1000) startJingle();
+    einhornSagtNamen();
   });
   $("#start-berg").onclick = () => bergAnsehen();
   $("#start-einst").onclick = () => { zeige("s-einst"); einstellungenZeichnen("start"); };
@@ -2651,9 +2423,11 @@ function bergSVG(id) {
   const stationen = st.map((s, i) => {
     const [x, y] = BERG_PUNKTE[i] || [150, 54];
     return `<g class="station" data-i="${i}" transform="translate(${x},${y})">
+      <circle class="treffer" r="30" fill="transparent"/>
       <circle class="ring" r="19" fill="#fff" stroke="#C7B0EC" stroke-width="3.5"/>
       <text y="7" text-anchor="middle" font-size="19">${s.symbol}</text>
-      <text class="label" y="34" text-anchor="middle" font-size="12.5" font-weight="800" fill="#4A3A48" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(s.name)}</text></g>`;
+      <text class="label" y="34" text-anchor="middle" font-size="12.5" font-weight="800" fill="#4A3A48" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(s.name)}</text>
+      <g class="schloss" transform="translate(14,-14)"><circle r="9" fill="#fff" stroke="#C7B0EC" stroke-width="2"/><text y="4" text-anchor="middle" font-size="10">🔒</text></g></g>`;
   }).join("");
   const farben = ["#F2A9BF", "#F6C99A", "#F3E39A", "#A8E2C0", "#9CCBF0", "#C7B0EC"];
   const regenbogen = farben.map((f, i) => { const r = 120 - i * 8; return `<path d="M${150 - r},132 A${r},${r} 0 0 1 ${150 + r},132" stroke="${f}" stroke-width="8" fill="none" opacity=".75"/>`; }).join("");
@@ -2704,7 +2478,33 @@ function bergAnsehen() {
   const svg = $("#berg-gross svg");
   bergReiterSetzen(svg, S.berg.punkte); bergInfo(S.berg.punkte);
   $("#berg-knoepfe").classList.add("versteckt");
+  stationenAntippbar(svg);
   if (S.knoepfeAnsagen) Sprache.sprich(CONFIG.stationen[stationIndexFuer(S.berg.punkte)].satz);
+}
+/* ---------- Stationen nochmal ansehen ----------
+   Erreichte Stationen spielen ihre Szene beim Antippen noch einmal ab.
+   Nach der ersten ganzen Bergtour sind alle Stationen frei. */
+function stationFrei(i) { return S.berg.touren > 0 || S.trophaeen.kronen > 0 || i <= stationIndexFuer(S.berg.punkte); }
+let stationSpieltGerade = false;
+function stationenAntippbar(svg) {
+  if (!svg) return;
+  svg.classList.add("antippbar");
+  $$(".station", svg).forEach((st) => st.classList.toggle("gesperrt", !stationFrei(+st.dataset.i)));
+  svg.addEventListener("click", async (e) => {
+    // Tipp auf eine Station – oder auf das Einhorn selbst: dann die Station, an der es gerade ist
+    const st = e.target.closest(".station"), reiter = e.target.closest(".reiter");
+    if ((!st && !reiter) || stationSpieltGerade || !svg.isConnected) return;
+    const i = st ? +st.dataset.i : stationIndexFuer(S.berg.punkte);
+    if (reiter) einhornAnim(reiter.querySelector(".einhorn"), "huepfen", 900);
+    if (!stationFrei(i)) {
+      if (!st) return;
+      st.classList.remove("wackeln"); void st.getBoundingClientRect(); st.classList.add("wackeln");
+      Ton.spiele("nochmal"); return;
+    }
+    stationSpieltGerade = true;
+    try { await stationPopup(i, i === CONFIG.stationen.length - 1, true); }
+    finally { stationSpieltGerade = false; }
+  });
 }
 function animiereReiter(svg, von, bis) {
   return new Promise((res) => {
@@ -2736,6 +2536,15 @@ function baum(x, y, g = 1, dunkel = false) {
   return `<g transform="translate(${x},${y}) scale(${g})"><rect x="-4" y="-2" width="8" height="16" rx="2" fill="#A57C5B"/>
     <path d="M0,-58 L26,-4 L-26,-4 Z" fill="${f1}"/><path d="M0,-70 L20,-30 L-20,-30 Z" fill="${f2}"/></g>`;
 }
+function baumFarbe(x, y, g, f1, f2, stamm = "#A57C5B") {
+  return `<g transform="translate(${x},${y}) scale(${g})"><rect x="-4" y="-2" width="8" height="16" rx="2" fill="${stamm}"/>
+    <path d="M0,-58 L26,-4 L-26,-4 Z" fill="${f1}"/><path d="M0,-70 L20,-30 L-20,-30 Z" fill="${f2}"/></g>`;
+}
+function blume(x, y, f, g = 1) {
+  return `<g transform="translate(${x},${y}) scale(${g})"><path d="M0,0 L0,10" stroke="#6DBE91" stroke-width="2"/>
+    <circle cx="0" cy="-4" r="3.2" fill="${f}"/><circle cx="4" cy="0" r="3.2" fill="${f}"/><circle cx="0" cy="4" r="3.2" fill="${f}"/><circle cx="-4" cy="0" r="3.2" fill="${f}"/>
+    <circle cx="0" cy="0" r="2.4" fill="#F3D36B"/></g>`;
+}
 function wolke(x, y, g = 1) {
   return `<g transform="translate(${x},${y}) scale(${g})" fill="#fff"><ellipse cx="0" cy="0" rx="34" ry="13"/><ellipse cx="-16" cy="-8" rx="16" ry="12"/><ellipse cx="12" cy="-10" rx="18" ry="14"/></g>`;
 }
@@ -2744,11 +2553,37 @@ function stationSzeneSVG(i) {
   const boden = `<path d="M0,190 C80,172 160,182 240,176 C300,172 360,178 400,186 L400,220 L0,220 Z" fill="#9FD9AE"/>`;
   let mitte = "";
   switch (i) {
-    case 1: // Wald
-      mitte = `${boden}${baum(34, 186, 1.1, true)}${baum(78, 192, .85)}${baum(330, 188, 1.15, true)}${baum(372, 194, .9)}${baum(292, 196, .7)}${baum(112, 198, .6, true)}
-        <g transform="translate(250,198)"><rect x="-3" y="-8" width="6" height="10" fill="#fff"/><path d="M-11,-8 A11,9 0 0 1 11,-8 Z" fill="#E86F8E"/><circle cx="-4" cy="-12" r="1.8" fill="#fff"/><circle cx="4" cy="-13" r="1.5" fill="#fff"/></g>
-        <text x="150" y="58" font-size="22">🐦</text><text x="60" y="210" font-size="18">🍄</text>${wolke(300, 46, .8)}`;
+    case 0: { // Feld: Wiese mit Sonne, Zaun, vielen Blumen und Schmetterlingen
+      const strahlen = Array.from({ length: 10 }, (_, j) => { const w = j * 36 * Math.PI / 180; return `<path d="M${(340 + Math.cos(w) * 30).toFixed(1)},${(44 + Math.sin(w) * 30).toFixed(1)} L${(340 + Math.cos(w) * 42).toFixed(1)},${(44 + Math.sin(w) * 42).toFixed(1)}" stroke="#F3D36B" stroke-width="4" stroke-linecap="round"/>`; }).join("");
+      const farben = ["#F2A9BF", "#C7B0EC", "#fff", "#9CCBF0", "#F6C99A", "#E86F8E"];
+      const blumen = [[22, 196], [48, 206], [74, 192], [96, 210], [118, 198], [290, 200], [312, 210], [336, 194], [358, 206], [382, 198], [140, 212], [262, 212], [36, 182], [372, 184], [210, 214], [60, 214], [326, 214], [104, 186], [300, 186]]
+        .map(([x, y], j) => blume(x, y, farben[j % farben.length], .9 + (j % 3) * .15)).join("");
+      const zaun = Array.from({ length: 9 }, (_, j) => `<rect x="${8 + j * 15}" y="148" width="6" height="30" rx="2" fill="#C9A27E"/>`).join("");
+      mitte = `<circle cx="340" cy="44" r="22" fill="#F7DC7A"/>${strahlen}${wolke(90, 44, .9)}${wolke(220, 30, .6)}
+        <path d="M0,150 C90,120 190,132 260,140 C320,146 370,136 400,130 L400,220 L0,220 Z" fill="#CDEBC0"/>
+        <path d="M0,172 C100,154 220,164 400,158 L400,220 L0,220 Z" fill="#B5E2B4"/>
+        ${zaun}<rect x="6" y="154" width="138" height="5" rx="2" fill="#B88F6A"/><rect x="6" y="166" width="138" height="5" rx="2" fill="#B88F6A"/>
+        ${boden}<path d="M200,220 C190,206 196,194 214,186" stroke="#E6D3A8" stroke-width="14" fill="none" stroke-linecap="round" opacity=".7"/>
+        ${blumen}<text x="70" y="120" font-size="20">🦋</text><text x="300" y="132" font-size="16">🦋</text><text x="168" y="84" font-size="14">🐝</text><text x="112" y="214" font-size="13">🐞</text>`;
       break;
+    }
+    case 1: { // Wald: dichter Wald mit drei Baumreihen hintereinander
+      const hinten = [8, 30, 52, 74, 96, 118, 140, 162, 184, 206, 228, 250, 272, 294, 316, 338, 360, 382, 398]
+        .map((x, j) => baumFarbe(x, 150 + (j % 3) * 4, .5 + (j % 4) * .05, j % 2 ? "#A9DBBE" : "#B8E2C9", "#C6E9D3", "#B99A80")).join("");
+      const mitteReihe = [[18, 178], [56, 172], [92, 180], [128, 174], [164, 178], [236, 176], [272, 172], [308, 180], [344, 174], [384, 178], [200, 170]]
+        .map(([x, y], j) => baumFarbe(x, y, .72 + (j % 3) * .07, j % 2 ? "#6DBE91" : "#7CC79F", "#8ED3AE")).join("");
+      const vorne = [[12, 214, 1.35], [58, 222, 1.15], [104, 226, .95], [298, 226, .95], [344, 222, 1.15], [392, 214, 1.35]]
+        .map(([x, y, g]) => baum(x, y, g, true)).join("");
+      const buesche = [[70, 214, 26], [140, 218, 22], [262, 218, 22], [330, 214, 26]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * .55}" fill="#5AAE82"/>`).join("");
+      const pilz = (x, y, g) => `<g transform="translate(${x},${y}) scale(${g})"><rect x="-3" y="-8" width="6" height="10" fill="#fff"/><path d="M-11,-8 A11,9 0 0 1 11,-8 Z" fill="#E86F8E"/><circle cx="-4" cy="-12" r="1.8" fill="#fff"/><circle cx="4" cy="-13" r="1.5" fill="#fff"/></g>`;
+      mitte = `<path d="M0,40 L70,0 L110,0 L30,60 Z M150,0 L190,0 L120,90 L96,80 Z" fill="#fff" opacity=".35"/>
+        <path d="M0,150 C80,124 170,132 240,128 C310,124 360,132 400,140 L400,220 L0,220 Z" fill="#BFE3CB"/>
+        ${hinten}${mitteReihe}${boden}
+        <path d="M184,220 C178,204 190,192 206,186 L220,186 C206,194 200,206 214,220 Z" fill="#E6D3A8" opacity=".7"/>
+        ${buesche}${vorne}${pilz(150, 206, 1)}${pilz(162, 210, .7)}${pilz(252, 208, .85)}
+        <text x="300" y="70" font-size="20">🐦</text><text x="84" y="176" font-size="18">🐿️</text><text x="318" y="206" font-size="18">🦔</text><text x="150" y="104" font-size="14">🦋</text>`;
+      break;
+    }
     case 2: // Bergfuß
       mitte = `<path d="M120,190 L250,40 L380,190 Z" fill="#C9B6E6"/><path d="M250,40 L228,78 L240,72 L250,86 L260,72 L272,78 Z" fill="#fff"/>
         ${boden}<ellipse cx="300" cy="196" rx="34" ry="16" fill="#A994CF"/><ellipse cx="338" cy="204" rx="20" ry="11" fill="#9C86C4"/><ellipse cx="70" cy="204" rx="22" ry="10" fill="#A994CF"/>
@@ -2780,7 +2615,7 @@ function stationSzeneSVG(i) {
   return `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="220" fill="${himmel}"/>${mitte}</svg>`;
 }
 // Pop-up mit kleiner Szene: Einhorn galoppiert herein, freut sich, Konfetti. Weiter per Tipp oder nach einigen Sekunden.
-async function stationPopup(i, ziel = false) {
+async function stationPopup(i, ziel = false, nochmal = false) {
   const s = CONFIG.stationen[i], o = $("#o-feier");
   o.classList.add("station-pop");
   o.innerHTML = `<div class="pop-karte">
@@ -2805,9 +2640,9 @@ async function stationPopup(i, ziel = false) {
   const sprechen = (async () => {
     await warte(melodieMs ? melodieMs + 150 : 0);
     if (uebersprungen) return;
-    await Sprache.sprich(ziel ? ersetze("Hurra! Wir sind über den Wolken! {einhorn} bekommt eine Krone!") : s.satz);
+    await Sprache.sprich(ersetze(ziel ? (nochmal ? CONFIG.kroneNochmalSatz || s.satz : CONFIG.kroneSatz || s.satz) : s.satz));
     setTimeout(() => einhornAnim(u, "huepfen", 900), 200);
-    if (ziel) { await warte(300); if (!uebersprungen) await Sprache.sprich("Jetzt beginnt eine neue Bergtour!"); }
+    if (ziel && !nochmal && CONFIG.neueTourSatz) { await warte(300); if (!uebersprungen) await Sprache.sprich(ersetze(CONFIG.neueTourSatz)); }
   })();
   await Promise.race([weiter, Promise.all([sprechen, warte(ziel ? 6500 : 5000)])]);
   uebersprungen = true; Sprache.stop(); Ton.melodienStopp();
@@ -2843,6 +2678,7 @@ async function bergNachRunde(alt, plus, krone) {
     bergInfo(S.berg.punkte);
   }
   $("#berg-knoepfe").classList.remove("versteckt");
+  stationenAntippbar($("#berg-gross svg"));
 }
 function bergEinrichten() {
   $("#berg-nochmal").onclick = () => {
@@ -2889,10 +2725,10 @@ function reglerHTML(id, wert, min, max, schritt) {
 }
 const EINST_SEITEN = [
   { id: "spiel", icon: "🎮", titel: "Spiel", text: "Einhorn & Kind, Spracherkennung, Ansagen" },
-  { id: "sounds", icon: "🔊", titel: "Sounds & Stimmen", text: "Vorlesestimme, Tempo, Töne, Musik" },
-  { id: "bibliothek", icon: "📚", titel: "Bibliothek", text: "Alle Karten, Fotos, neue Karten" },
+  { id: "sounds", icon: "🔊", titel: "Sounds & Stimmen", text: "Vorlesestimmen mit Hörprobe, Töne, Musik" },
+  { id: "bibliothek", icon: "📚", titel: "Bibliothek", text: "Inhaltsdateien, alle Karten, Fotos, neue Karten" },
   { id: "fortschritt", icon: "⛰️", titel: "Fortschritt", text: "Berg, Einhorntraining, Trophäen" },
-  { id: "sichern", icon: "💾", titel: "Sichern", text: "Sicherung erstellen und laden" }
+  { id: "sichern", icon: "💾", titel: "Sichern & Neu anfangen", text: "Sicherung, Einhorn neu kennenlernen, alles zurücksetzen" }
 ];
 let einstSeite = "start";
 function einstellungenZeichnen(seite = einstSeite) {
@@ -2927,6 +2763,7 @@ function einstSpiel(box) {
   <div class="abschnitt"><h3>🦄 Einhorn &amp; Kind</h3>
     <div class="reihe"><label class="titel-l" for="e-einhorn">Name des Einhorns</label><input class="feld" id="e-einhorn" maxlength="16" value="${esc(S.einhornName)}"></div>
     <div class="reihe"><label class="titel-l" for="e-kind">Name des Kindes (optional, für „My name is …“)</label><input class="feld" id="e-kind" maxlength="20" value="${esc(S.kindName)}"></div>
+    <div class="reihe"><button class="e-knopf" id="e-kennenlernen">🦄 Einhorn neu kennenlernen</button><span class="info">Die Namensgebung vom ersten Start noch einmal erleben. Spielstand und Einstellungen bleiben.</span></div>
   </div>
   <div class="abschnitt"><h3>🎤 Spracherkennung</h3>
     <p class="status ${st.ok ? "ok" : "warn"}">${st.ok ? "✅ Auf diesem Gerät verfügbar." : "⚠️ " + esc(SR_HINWEIS[st.grund])}</p>
@@ -2942,6 +2779,7 @@ function einstSpiel(box) {
   </div>`;
   $("#e-einhorn").onchange = (e) => { const n = e.target.value.trim(); if (n) { S.einhornName = n; speichere(); } else e.target.value = S.einhornName; };
   $("#e-kind").onchange = (e) => { S.kindName = e.target.value.trim(); speichere(); };
+  $("#e-kennenlernen").onclick = einhornNeuKennenlernen;
   $("#e-sr").onchange = (e) => { S.spracherkennung = e.target.checked; speichere(); };
   $("#e-lob").onchange = (e) => { S.lobVorlesen = e.target.checked; speichere(); };
   $("#e-ansage").onchange = (e) => { S.knoepfeAnsagen = e.target.checked; speichere(); };
@@ -2971,12 +2809,22 @@ function einstSounds(box) {
     <div class="reihe"><label class="titel-l" for="e-stimme-${sp}">${titel}</label><select class="feld" id="e-stimme-${sp}"></select><button class="e-knopf" id="e-probe-${sp}">▶︎ Hörprobe</button></div>
     <div class="reihe"><label class="titel-l" for="e-tempo-${sp}">Tempo</label>${reglerHTML("e-tempo-" + sp, sp === "de" ? S.stimmeDeTempo : S.stimmeEnTempo, 0.7, 1.25, 0.05)}</div>
     <div class="reihe"><label class="titel-l" for="e-hoehe-${sp}">Stimmhöhe</label>${reglerHTML("e-hoehe-" + sp, sp === "de" ? S.stimmeDeHoehe : S.stimmeEnHoehe, 0.8, 1.4, 0.05)}</div>`;
+  const aufnahmeBlock = (sp) => {
+    const l = Aufnahmen.vonSprache(sp); if (!l.length) return "";
+    const w = (sp === "en" ? S.aufnahmeEn : S.aufnahmeDe), aktiv = Aufnahmen.gewaehlt(sp);
+    const zeile = (wert, titel, info, an, probe) => `<div class="reihe aufn-reihe"><label class="aufn-wahl"><input type="radio" name="aufn-${sp}" value="${esc(wert)}" ${an ? "checked" : ""}><span><b>${esc(titel)}</b>${info ? ` <span class="info">${esc(info)}</span>` : ""}</span></label>${probe ? `<button class="e-knopf" data-aprobe="${esc(wert)}">▶︎ Hörprobe</button>` : ""}</div>`;
+    return `<p class="info">Aufgenommene Stimmen (klingen natürlicher, funktionieren offline):</p>`
+      + l.map((v) => zeile(v.id, v.name, v.info || "", aktiv && aktiv.id === v.id, true)).join("")
+      + zeile("ipad", "Nur iPad-Stimme", "", w === "ipad", false)
+      + `<p class="info">Alles, was nicht aufgenommen ist (neue Wörter, andere Namen), spricht die iPad-Stimme unten.</p>`;
+  };
+  const ipadTitel = (sp) => Aufnahmen.vonSprache(sp).length ? "iPad-Stimme (Ersatz)" : (sp === "en" ? "Stimme (britisch zuerst)" : "Stimme");
   box.innerHTML = `
-  <div class="abschnitt"><h3>🇩🇪 Deutsche Vorlesestimme</h3>${stimmBlock("de", "Stimme")}</div>
-  <div class="abschnitt"><h3>🇬🇧 Englische Vorlesestimme</h3>${stimmBlock("en", "Stimme (britisch zuerst)")}</div>
-  <div class="abschnitt"><h3>💡 Warum klingt die Stimme künstlich?</h3>
-    <p class="info">Safari kann auf iPad und iPhone leider nur die vorinstallierten Stimmen benutzen. Stimmen, die du in den iPad-Einstellungen nachlädst („Erweitert“ oder „Premium“), kann eine Web-App derzeit nicht verwenden – das ist eine Einschränkung von Apple.</p>
-    <p class="info">Tipps: „Automatisch“ wählen (das ist meist die angenehmste Stimme) und alles mit „🤖“ meiden. Stimmhöhe am besten bei 1,0 lassen und das Tempo nicht zu weit absenken – stark veränderte Werte lassen die Apple-Stimmen gedehnt und metallisch klingen. Taucht eine Stimme mit „⭐ Premium“ oder „✨ Erweitert“ in der Liste auf, kann Safari sie nutzen: einfach auswählen.</p>
+  <div class="abschnitt"><h3>🇩🇪 Deutsche Vorlesestimme</h3>${aufnahmeBlock("de")}${stimmBlock("de", ipadTitel("de"))}</div>
+  <div class="abschnitt"><h3>🇬🇧 Englische Vorlesestimme</h3>${aufnahmeBlock("en")}${stimmBlock("en", ipadTitel("en"))}</div>
+  <div class="abschnitt"><h3>💡 Tipps zu den Stimmen</h3>
+    <p class="info">Die aufgenommenen Stimmen sind freie KI-Stimmen, die mit der App mitgeliefert werden (Dateien stimmen.json und stimme-….bin). Tempo und Stimmhöhe gelten nur für die iPad-Stimme.</p>
+    <p class="info">Safari kann auf dem iPad nur die vorinstallierten Apple-Stimmen benutzen; nachgeladene „Erweitert“- oder „Premium“-Stimmen sind für Web-Apps gesperrt (Einschränkung von Apple). Für die iPad-Stimme am besten „Automatisch“ wählen, alles mit „🤖“ meiden und Stimmhöhe bei 1,0 lassen.</p>
     <div class="reihe"><button class="e-knopf" id="e-stimme-standard">↺ Tempo und Stimmhöhe auf Standard</button></div>
   </div>
   <div class="abschnitt"><h3>🎵 Töne &amp; Musik</h3>
@@ -2985,10 +2833,22 @@ function einstSounds(box) {
     <div class="reihe"><label class="titel-l" for="e-musik">Sanfte Hintergrundmelodie</label>${schalterHTML("e-musik", S.musik)}</div>
   </div>`;
   stimmenListenFuellen();
+  $$('input[name^="aufn-"]', box).forEach((r) => r.onchange = () => {
+    const sp = r.name === "aufn-en" ? "en" : "de";
+    if (sp === "en") S.aufnahmeEn = r.value; else S.aufnahmeDe = r.value;
+    speichere(); const v = Aufnahmen.gewaehlt(sp); if (v) Aufnahmen.paket(v);
+  });
+  $$("[data-aprobe]", box).forEach((b) => b.onclick = () => {
+    entsperren(); Sprache.stop();
+    const v = Aufnahmen.liste.find((x) => x.id === b.dataset.aprobe); if (!v) return;
+    const texte = [v.probe, ersetze((CONFIG.einhornSaetze || [])[0] || ""), "Affe", "Hello! I am hungry."].filter(Boolean);
+    const t = texte.find((x) => Aufnahmen.eintrag(v, x));
+    if (t) Aufnahmen.spiele(v.sprache, t, {}, v).then((ok) => { if (!ok) hinweis("Die Stimme wird noch geladen – gleich nochmal tippen."); });
+  });
   $("#e-stimme-de").onchange = (e) => { S.stimmeDe = e.target.value; speichere(); };
   $("#e-stimme-en").onchange = (e) => { S.stimmeEn = e.target.value; speichere(); };
-  const probeDe = () => { entsperren(); Sprache.sprich(ersetze("Hallo! Ich bin {einhorn}. Maus, Mond und Milch.")); };
-  const probeEn = () => { entsperren(); Sprache.sprich("Hello! I am hungry. Water, please!", { sprache: "en", tempo: CONFIG.tempo.enSatz }); };
+  const probeDe = () => { entsperren(); Sprache.stop(); Sprache.sprichIpad(ersetze("Hallo! Ich bin {einhorn}. Maus, Mond und Milch.")); };
+  const probeEn = () => { entsperren(); Sprache.stop(); Sprache.sprichIpad("Hello! I am hungry. Water, please!", { sprache: "en", tempo: CONFIG.tempo.enSatz }); };
   $("#e-probe-de").onclick = probeDe; $("#e-probe-en").onclick = probeEn;
   const regler = (id, key, probe) => { const r = $(id); r.onchange = () => { S[key] = parseFloat(r.value); speichere(); probe(); }; };
   regler("#e-tempo-de", "stimmeDeTempo", probeDe); regler("#e-hoehe-de", "stimmeDeHoehe", probeDe);
@@ -3021,7 +2881,14 @@ function stimmenListenFuellen() {
 
 /* ---------- Bibliothek ---------- */
 function einstBibliothek(box) {
+  const pruefung = window.INHALT_HINWEISE && INHALT_HINWEISE.length
+    ? `<p class="status warn">⚠️ Beim Laden der Inhaltsdateien ist etwas aufgefallen:</p><ul class="info hinweisliste">${INHALT_HINWEISE.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`
+    : `<p class="status ok">✅ Alle Inhaltsdateien sind in Ordnung (${INHALTE_ABC.length} Karten ABC, ${INHALTE_ENGLISH.length} Karten English).</p>`;
   box.innerHTML = `
+  <div class="abschnitt"><h3>📄 Inhaltsdateien</h3>
+    ${pruefung}
+    <p class="info">Wörter und Übungen stehen in <b>inhalte-abc.js</b> und <b>inhalte-english.js</b>, Punkte, Berg und die Sätze des Einhorns in <b>einstellungen.js</b>. Du kannst sie direkt auf GitHub bearbeiten (Stift-Symbol). Danach die App einmal ganz schließen und mit Internet neu öffnen.</p>
+  </div>
   <div class="abschnitt"><h3>🗂️ Alle Karten</h3>
     <p class="info">Ausblenden, eigene Fotos statt Emojis und Wörter anhören. Ausgeblendete Karten werden nie gezogen.</p>
     <div class="filter" id="f-spiel"></div><div class="filter" id="f-typ"></div><div class="filter" id="f-stufe"></div>
@@ -3056,9 +2923,31 @@ function einstSichern(box) {
   <div class="abschnitt"><h3>💾 Sichern &amp; Wiederherstellen</h3>
     <p class="info">Sichert Einstellungen, eigene Karten mit Fotos, Spielstand und Trophäen in einer Datei. Vor jedem Update empfehlenswert.</p>
     <div class="reihe"><button class="e-knopf gruen" id="e-export">Sicherung erstellen</button><button class="e-knopf" id="e-import">Sicherung laden</button></div>
+  </div>
+  <div class="abschnitt"><h3>🦄 Einhorn neu kennenlernen</h3>
+    <p class="info">Die Namensgebung vom ersten Start beginnt noch einmal: Das Einhorn stellt sich vor und bekommt (wieder) einen Namen. Berg, Trophäen, Einhorntraining, eigene Karten und alle Einstellungen bleiben erhalten.</p>
+    <div class="reihe"><button class="e-knopf" id="e-kennenlernen2">Namensgebung starten</button></div>
+  </div>
+  <div class="abschnitt"><h3>↺ Alles zurücksetzen</h3>
+    <p class="info">Setzt die App auf den ersten Start zurück: Name des Einhorns und des Kindes, alle Einstellungen, Berg, Trophäen, Einhorntraining, ausgeblendete Karten sowie eigene Karten und Fotos werden gelöscht. Vorher am besten eine Sicherung erstellen.</p>
+    <div class="reihe"><button class="e-knopf warn" id="e-alles-reset">Alles zurücksetzen</button></div>
   </div>`;
   $("#e-export").onclick = exportieren;
   $("#e-import").onclick = importieren;
+  $("#e-kennenlernen2").onclick = einhornNeuKennenlernen;
+  $("#e-alles-reset").onclick = allesZuruecksetzen;
+}
+async function einhornNeuKennenlernen() {
+  if (!(await frage("Namensgebung noch einmal starten? Alles andere bleibt, wie es ist.", "🦄", false))) return;
+  introStart(true);
+}
+async function allesZuruecksetzen() {
+  if (!(await frage("Wirklich alles zurücksetzen? Name, Einstellungen, Berg, Trophäen, Einhorntraining und eigene Karten mit Fotos werden gelöscht.", "⚠️", false))) return;
+  if (!(await frage("Ganz sicher? Ohne Sicherung lässt sich das nicht rückgängig machen.", "⚠️", false))) return;
+  Sprache.stop(); speichernGesperrt = true;
+  try { localStorage.removeItem(SPEICHER_SCHLUESSEL); } catch (e) { }
+  await DB.leeren();
+  location.reload();
 }
 function filterZeichnen() {
   const knoepfe = (id, werte, key) => {
@@ -3240,7 +3129,7 @@ function testmodusEinrichten() {
   [10, 11, 12, 13, 14, 15, 16].forEach((v) => knopf(String(v), () => { R.aktiv = false; R.test = true; R.spiel = gewaehltesSpiel; belohnenUndBerg(ergebnisFuer(v), gewaehltesSpiel); }));
   const t = document.createElement("b"); t.textContent = "Sonstiges:"; p.appendChild(t);
   knopf("+10 Punkte", () => { R.test = true; belohnenUndBerg({ szene: "gold", platz: 1, punkte: 10 }, "abc"); });
-  knopf("Alles löschen", async () => { try { localStorage.removeItem(SPEICHER_SCHLUESSEL); } catch (e) { } await DB.leeren(); location.reload(); });
+  knopf("Alles löschen", async () => { speichernGesperrt = true; try { localStorage.removeItem(SPEICHER_SCHLUESSEL); } catch (e) { } await DB.leeren(); location.reload(); });
   k.onclick = () => p.classList.toggle("versteckt");
   $("#app").append(k, p);
 }
@@ -3251,6 +3140,7 @@ function testmodusEinrichten() {
 function init() {
   laden();
   Sprache.laden();
+  Aufnahmen.laden();
   // Kein Gummiband-Scrollen und kein Zoomen
   document.addEventListener("touchmove", (e) => { if (!e.target.closest(".scroll")) e.preventDefault(); }, { passive: false });
   document.addEventListener("gesturestart", (e) => e.preventDefault());
@@ -3286,6 +3176,7 @@ function init() {
   window.addEventListener("pagehide", speichere);
   if (TESTMODUS) testmodusEinrichten();
   if (!S.einhornName) introStart(); else { zeige("s-start"); startZeichnen(); }
+  if (window.INHALT_HINWEISE && INHALT_HINWEISE.length) setTimeout(() => hinweis("⚠️ In einer Inhaltsdatei steckt ein Fehler – Details unter Einstellungen › Bibliothek.", 6000), 900);
   if ("serviceWorker" in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => { });
 }
 document.addEventListener("DOMContentLoaded", init);
