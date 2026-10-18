@@ -245,12 +245,12 @@ svg { display: block; }
   #s-intro { flex-direction: row; gap: 24px; }
   #s-intro .intro-einhorn { width: min(42vw, 70vh, 460px); }
   .intro-rechts { width: min(520px, 52vw); }
-  .namensfeld input { font-size: 24px; padding: 10px 14px; }
+  .chip { min-height: 72px; font-size: 26px; }
 }
 @media (orientation: landscape) and (max-height: 520px) {
   .sprechblase { font-size: 17px; padding: 10px 16px; }
   .intro-rechts, .namensfeld { gap: 8px; }
-  .chip:nth-child(n+4) { display: none; }
+  .chip { min-height: 58px; font-size: 21px; padding: 0 16px; }
   .los-knopf { width: 120px; height: 120px; font-size: 56px; }
 }
 .sprechblase {
@@ -258,14 +258,13 @@ svg { display: block; }
   font-size: clamp(20px, 3.2vmin, 28px); font-weight: 700; box-shadow: var(--schatten); max-width: 560px;
 }
 .namensfeld { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(560px, 100%); }
-.namensfeld input {
-  width: 100%; font-size: 30px; text-align: center; padding: 14px 18px; border-radius: 22px;
-  border: 3px solid var(--flaeche); background: var(--weiss); color: var(--text); outline: none; font-weight: 700;
-}
-.namensfeld input:focus { border-color: var(--akzent); }
-.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.chip { border: none; background: var(--flieder); border-radius: 999px; padding: 0 20px; min-height: 64px; font-size: 21px; font-weight: 700; box-shadow: 0 4px 0 rgba(160,130,200,.5); }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.chip { border: 4px solid transparent; background: var(--flieder); border-radius: 999px; padding: 0 24px; min-height: 80px; font-size: 30px; font-weight: 800; box-shadow: 0 4px 0 rgba(160,130,200,.5); color: var(--text); }
 .chip:active { transform: translateY(2px); }
+.chip.gewaehlt { background: #FFF6D8; border-color: var(--gold); box-shadow: 0 4px 0 rgba(200,160,60,.45); }
+.chip.gewaehlt::before { content: "⭐ "; }
+.chips.wackeln { animation: schubsen .45s ease; }
+@keyframes schubsen { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-12px); } 75% { transform: translateX(12px); } }
 .los-knopf { width: 150px; height: 150px; border-radius: 50%; font-size: 72px; background: var(--weiss); }
 
 /* ===================== Startbildschirm ===================== */
@@ -424,10 +423,17 @@ svg { display: block; }
 }
 .berg-svg .station circle { transition: transform .3s; }
 .berg-svg .station.erreicht circle.ring { fill: #FFF6D8; stroke: var(--gold); }
+/* Noch nicht erreichte Stationen der laufenden Bergtour: Schloss statt Symbol (überall, auch im Hauptmenü) */
 .berg-svg .station .schloss { display: none; }
 .berg-svg.antippbar .station, .berg-svg.antippbar .reiter { cursor: pointer; }
-.berg-svg.antippbar .station.gesperrt .schloss { display: inline; }
-.berg-svg.antippbar .station.gesperrt circle.ring { stroke-dasharray: 4 4; }
+.berg-svg .station.gesperrt .schloss { display: inline; }
+.berg-svg .station.gesperrt .symbol { opacity: 0; }
+.berg-svg .station.gesperrt circle.ring { fill: #EFEAF6; stroke: #B9ABD3; stroke-dasharray: 5 4; }
+.berg-svg .station.gesperrt .label { opacity: .6; }
+.berg-svg .station.aufschliessen .schloss { display: inline; animation: schlossAuf .9s ease forwards; transform-box: fill-box; transform-origin: center; }
+.berg-svg .station.aufschliessen .symbol { animation: symbolDa 1s ease; transform-box: fill-box; transform-origin: center; }
+@keyframes schlossAuf { 0% { transform: scale(1) rotate(0); opacity: 1; } 35% { transform: scale(1.45) rotate(-16deg); opacity: 1; } 100% { transform: translateY(-18px) scale(.3) rotate(24deg); opacity: 0; } }
+@keyframes symbolDa { 0%, 35% { transform: scale(0); opacity: 0; } 75% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 .berg-svg .station.wackeln > circle.ring, .berg-svg .station.wackeln > text:not(.label) { animation: wackeln .45s ease; transform-box: fill-box; transform-origin: center; }
 @keyframes wackeln { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
 .hinweisliste { margin: 4px 0 8px; padding-left: 22px; }
@@ -645,12 +651,8 @@ select.feld { -webkit-appearance: none; appearance: none; }
     <button class="knopf los-knopf" id="intro-los" aria-label="Los geht's">▶️</button>
     <button class="knopf rund versteckt" id="intro-home" aria-label="Zurück zum Start" style="position:absolute; top:calc(14px + env(safe-area-inset-top, 0px)); left:calc(14px + env(safe-area-inset-left, 0px)); z-index:3">🏠</button>
     <div class="namensfeld versteckt" id="intro-name">
-      <input id="intro-eingabe" type="text" maxlength="16" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Name des Einhorns">
       <div class="chips" id="intro-chips"></div>
-      <div style="display:flex; gap:16px">
-        <button class="knopf rund versteckt" id="intro-mikro" data-say="Sag den Namen">🎤</button>
-        <button class="knopf rund k-ja" id="intro-ok" style="color:#fff" aria-label="Fertig">✓</button>
-      </div>
+      <button class="knopf rund k-ja" id="intro-ok" style="color:#fff" aria-label="Fertig">✓</button>
     </div>
     </div>
   </section>
@@ -975,8 +977,8 @@ function appSymbolSVG() {
    Einhorn-ABC – Programm
    (Inhalte und Einstellungen stehen oben in CONFIG und BIBLIOTHEK)
    ===================================================================== */
-const APP_VERSION = "Version 4.3";
-const DATEN_STAND = 2;
+const APP_VERSION = "Version 5.0";
+const DATEN_STAND = 3;
 const SPEICHER_SCHLUESSEL = "einhornABC.v1";
 const TESTMODUS = /[?&]test\b/.test(location.search);
 const WENIG_BEWEGUNG = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1010,13 +1012,13 @@ function standardZustand() {
     toene: true, musik: false, spracherkennung: false,
     lobVorlesen: false,              // Lob per Stimme (Standard: aus)
     knoepfeAnsagen: false,           // Knöpfe sagen kurz, was sie tun (Standard: aus – dann Harfentöne)
-    berg: { punkte: 0, touren: 0 },
+    berg: { punkte: 0, touren: 0 },  // Punkte der laufenden Bergtour (Stationen darunter sind freigespielt)
     trophaeen: { gold: 0, silber: 0, bronze: 0, blumen: 0, kronen: 0 },
     stufe: { abc: "E", en: "E" },
     letzteRunde: { abc: [], en: [] },
     fehler: { abc: [], en: [] },     // [{ id, seit, richtig }]
     ausgeblendet: {},                // id -> true
-    aufnahmeDe: "auto", aufnahmeEn: "auto",   // aufgenommene Stimme: "auto" = erste, "ipad" = keine, sonst id
+    aufnahmeDe: "auto", aufnahmeEn: "auto",   // aufgenommene Stimme: "auto" = erste, sonst id
     stimmeDeTempo: 1, stimmeDeHoehe: CONFIG.stimmhoehe,   // Faktor auf das Grundtempo, Stimmhöhe
     stimmeEnTempo: 1, stimmeEnHoehe: CONFIG.stimmhoehe,
     fotos: {},                       // "id|wortIndex" -> true
@@ -1032,6 +1034,13 @@ function zustandAktualisieren(roh) {
     // Version 4.2: natürlichere Stimmhöhe und keine Knopf-Ansagen mehr als Standard
     if (Math.abs(S.stimmeDeHoehe - 1.05) < 0.001) S.stimmeDeHoehe = CONFIG.stimmhoehe;
     S.knoepfeAnsagen = false;
+  }
+  if (stand < 3) {
+    // Version 5: nur noch die aufgenommenen Stimmen zur Auswahl. Die iPad-Stimme springt
+    // nur noch unsichtbar ein (automatisch, Tempo und Stimmhöhe auf Standard).
+    S.aufnahmeDe = "auto"; S.aufnahmeEn = "auto";
+    S.stimmeDe = ""; S.stimmeEn = "";
+    S.stimmeDeTempo = 1; S.stimmeEnTempo = 1; S.stimmeDeHoehe = CONFIG.stimmhoehe; S.stimmeEnHoehe = CONFIG.stimmhoehe;
   }
   S.datenStand = DATEN_STAND;
 }
@@ -1395,6 +1404,11 @@ const Ton = {
         case "galopp": for (let r = 0; r < 5; r++) [0, 0.11, 0.26].forEach((d) => { const o = this.note(320, t + r * 0.42 + d, 0.09, "sine", 0.22); o.frequency.exponentialRampToValueAtTime(140, t + r * 0.42 + d + 0.08); }); break;
         case "funkeln": for (let i = 0; i < 7; i++) this.note(1800 + Math.random() * 1400, t + i * 0.07, 0.22, "sine", 0.07); break;
         case "pop": this.note(600, t, 0.08, "square", 0.05); break;
+        case "schloss": {   // Schlüssel dreht sich, Schloss springt auf, kleines Funkeln
+          [0, 0.07].forEach((d) => this.rauschen(t + d, 0.03, 0.12, 2500, "bandpass", 600));
+          [1318.5, 1760, 2637].forEach((f, i) => this.note(f, t + 0.16 + i * 0.07, 0.3, "sine", 0.12));
+          break;
+        }
       }
     } catch (e) { }
   },
@@ -1438,10 +1452,9 @@ const Aufnahmen = {
     return this.geladen;
   },
   vonSprache(sp) { return this.liste.filter((v) => v.sprache === sp); },
-  // "auto" = erste aufgenommene Stimme, "ipad" = nur die iPad-Stimme, sonst die id
+  // "auto" = erste aufgenommene Stimme, sonst die id
   gewaehlt(sp) {
     const w = sp === "en" ? S.aufnahmeEn : S.aufnahmeDe;
-    if (w === "ipad") return null;
     const l = this.vonSprache(sp);
     return l.find((v) => v.id === w) || l[0] || null;
   },
@@ -1461,10 +1474,15 @@ const Aufnahmen = {
   async dekodieren(v, k, e) {
     const id = v.id + "|" + k;
     if (this.puffer.has(id)) { const b = this.puffer.get(id); this.puffer.delete(id); this.puffer.set(id, b); return b; }
-    const paket = await this.paket(v); if (!paket) return null;
+    const paket = await Promise.race([this.paket(v), warte(8000).then(() => null)]); if (!paket) return null;
     Ton.init(); const ctx = Ton.ctx; if (!ctx) return null;
     const stueck = paket.slice(e[0], e[0] + e[1]);
-    const b = await new Promise((res) => { try { const p = ctx.decodeAudioData(stueck, res, () => res(null)); if (p && p.catch) p.catch(() => res(null)); } catch (er) { res(null); } });
+    // Mit Zeitlimit: hängt das Dekodieren (iPad nach dem Aufwachen), übernimmt die iPad-Stimme
+    const b = await new Promise((res) => {
+      const t = setTimeout(() => res(null), 4000);
+      const fertig = (x) => { clearTimeout(t); res(x || null); };
+      try { const p = ctx.decodeAudioData(stueck, fertig, () => fertig(null)); if (p && p.catch) p.catch(() => fertig(null)); } catch (er) { fertig(null); }
+    });
     if (b) { this.puffer.set(id, b); if (this.puffer.size > 80) this.puffer.delete(this.puffer.keys().next().value); }
     return b;
   },
@@ -1515,7 +1533,7 @@ const Sprache = {
   stimmen: [], aktiv: null,
   laden() {
     if (!("speechSynthesis" in window)) return;
-    const f = () => { try { this.stimmen = speechSynthesis.getVoices() || []; } catch (e) { } if (aktuellerScreen === "s-einst") stimmenListenFuellen(); };
+    const f = () => { try { this.stimmen = speechSynthesis.getVoices() || []; } catch (e) { } };
     f(); try { speechSynthesis.addEventListener("voiceschanged", f); } catch (e) { speechSynthesis.onvoiceschanged = f; }
     setTimeout(f, 600); setTimeout(f, 2000);
   },
@@ -1650,6 +1668,7 @@ let aktuellerScreen = null;
 function zeige(id) {
   $$(".screen").forEach((s) => s.classList.toggle("aktiv", s.id === id));
   aktuellerScreen = id;
+  if (id === "s-start" && updateWartet) setTimeout(updateAnwenden, 300);
 }
 function frage(text, icon = "🏠", sprechen = true) {
   return new Promise((res) => {
@@ -1665,6 +1684,12 @@ function nachHause() { Sprache.stop(); R.aktiv = false; zeige("s-start"); startZ
 /* =====================================================================
    Erster Start
    ===================================================================== */
+// Namen gibt es nur aus den Vorschlägen – die sind mit allen Stimmen aufgenommen
+function namensListe() {
+  const l = Array.isArray(CONFIG.namensVorschlaege) ? CONFIG.namensVorschlaege.map((n) => String(n).trim()).filter(Boolean) : [];
+  return l.length ? l : ["Luna", "Stella", "Glitzer", "Rosalie", "Sternchen"];
+}
+function gueltigerName(n) { const k = String(n || "").trim().toLowerCase(); return namensListe().find((x) => x.toLowerCase() === k) || ""; }
 function introStart(nochmal = false) {
   zeige("s-intro");
   $("#intro-einhorn").innerHTML = einhornSVG();
@@ -1672,16 +1697,19 @@ function introStart(nochmal = false) {
   // Zustand zurücksetzen (wichtig beim „Einhorn neu kennenlernen“)
   $("#intro-los").classList.remove("versteckt");
   $("#intro-name").classList.add("versteckt");
-  $("#intro-eingabe").value = "";
-  // Hat das Einhorn schon einen Namen, kann man ohne Änderung zurück zum Start
-  $("#intro-home").classList.toggle("versteckt", !(nochmal && S.einhornName));
+  // Hat das Einhorn schon einen (gültigen) Namen, kann man ohne Änderung zurück zum Start
+  $("#intro-home").classList.toggle("versteckt", !(nochmal && gueltigerName(S.einhornName)));
   $("#intro-home").onclick = () => { Sprache.stop(); zeige("s-start"); startZeichnen(); };
+  let gewaehlt = "";
   const chips = $("#intro-chips"); chips.innerHTML = "";
-  const namen = CONFIG.namensVorschlaege.slice();
-  if (nochmal && S.einhornName && !namen.includes(S.einhornName)) namen.unshift(S.einhornName);
-  namen.forEach((n) => {
-    const b = document.createElement("button"); b.className = "chip"; b.textContent = n;
-    b.onclick = () => { $("#intro-eingabe").value = n; Sprache.sprich(n); };
+  namensListe().forEach((n) => {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = n; b.dataset.name = n;
+    b.onclick = () => {
+      entsperren(); gewaehlt = n;
+      $$(".chip", chips).forEach((c) => c.classList.toggle("gewaehlt", c === b));
+      einhornAnim($("#intro-einhorn .einhorn"), "nicken", 700);
+      Sprache.sprich(n);
+    };
     chips.appendChild(b);
   });
   $("#intro-los").onclick = async () => {
@@ -1691,23 +1719,17 @@ function introStart(nochmal = false) {
     const satz = CONFIG.introFrage || "Hallo! Ich bin dein Einhorn. Ich habe noch keinen Namen. Wie soll ich heißen?";
     $("#intro-text").textContent = satz;
     $("#intro-name").classList.remove("versteckt");
-    $("#intro-mikro").classList.toggle("versteckt", !(S.spracherkennung && srStatus().ok));
     await Sprache.sprich(satz);
   };
-  $("#intro-mikro").onclick = async () => {
-    Sprache.stop(); hinweis("Ich höre zu …", 5000);
-    const { texte } = await hoereEinmal("de-DE");
-    if (texte.length) { const n = texte[texte.length - 1].split(/\s+/).pop(); $("#intro-eingabe").value = n.charAt(0).toUpperCase() + n.slice(1); }
-    else hinweis("Nichts verstanden – bitte eintippen.");
-  };
   $("#intro-ok").onclick = async () => {
-    const name = $("#intro-eingabe").value.trim();
-    if (!name) { Sprache.sprich(CONFIG.introNameFehlt || "Bitte gib mir einen Namen."); $("#intro-eingabe").focus(); return; }
-    $("#intro-eingabe").blur();
-    S.einhornName = name; speichere();
+    entsperren();
+    if (!gewaehlt) { Sprache.sprich(CONFIG.introNameFehlt || "Bitte gib mir einen Namen."); chips.classList.remove("wackeln"); void chips.offsetWidth; chips.classList.add("wackeln"); return; }
+    S.einhornName = gewaehlt; speichere();
+    $("#intro-ok").disabled = true;
     const svg = $("#intro-einhorn .einhorn"); einhornAnim(svg, "huepfen", 900); Ton.spiele("richtig");
-    $("#intro-text").textContent = `Juhu! Ich heiße ${name}!`;
+    $("#intro-text").textContent = `Juhu! Ich heiße ${gewaehlt}!`;
     await Sprache.sprich(ersetze(CONFIG.introFertig || "Juhu! Ich heiße {einhorn}! Lass uns zusammen spielen!"));
+    $("#intro-ok").disabled = false;
     zeige("s-start"); startZeichnen(); startJingle();
   };
 }
@@ -2425,9 +2447,9 @@ function bergSVG(id) {
     return `<g class="station" data-i="${i}" transform="translate(${x},${y})">
       <circle class="treffer" r="30" fill="transparent"/>
       <circle class="ring" r="19" fill="#fff" stroke="#C7B0EC" stroke-width="3.5"/>
-      <text y="7" text-anchor="middle" font-size="19">${s.symbol}</text>
-      <text class="label" y="34" text-anchor="middle" font-size="12.5" font-weight="800" fill="#4A3A48" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(s.name)}</text>
-      <g class="schloss" transform="translate(14,-14)"><circle r="9" fill="#fff" stroke="#C7B0EC" stroke-width="2"/><text y="4" text-anchor="middle" font-size="10">🔒</text></g></g>`;
+      <text class="symbol" y="7" text-anchor="middle" font-size="19">${s.symbol}</text>
+      <text class="schloss" y="7" text-anchor="middle" font-size="19">🔒</text>
+      <text class="label" y="34" text-anchor="middle" font-size="12.5" font-weight="800" fill="#4A3A48" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(s.name)}</text></g>`;
   }).join("");
   const farben = ["#F2A9BF", "#F6C99A", "#F3E39A", "#A8E2C0", "#9CCBF0", "#C7B0EC"];
   const regenbogen = farben.map((f, i) => { const r = 120 - i * 8; return `<path d="M${150 - r},132 A${r},${r} 0 0 1 ${150 + r},132" stroke="${f}" stroke-width="8" fill="none" opacity=".75"/>`; }).join("");
@@ -2469,7 +2491,19 @@ function bergReiterSetzen(svg, p) {
   const pos = bergPosition(svg, p);
   svg.querySelector(".reiter").setAttribute("transform", `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
   const idx = stationIndexFuer(p);
-  $$(".station", svg).forEach((s) => s.classList.toggle("erreicht", +s.dataset.i <= idx));
+  $$(".station", svg).forEach((s) => {
+    const i = +s.dataset.i, erreicht = i <= idx;
+    // Gerade erreicht (beim Hochlaufen): Schloss springt auf
+    if (erreicht && s.classList.contains("gesperrt") && svg.dataset.animiert === "1") schlossAufmachen(s);
+    s.classList.toggle("erreicht", erreicht);
+    s.classList.toggle("gesperrt", !erreicht);
+  });
+}
+function schlossAufmachen(st) {
+  const schloss = st.querySelector(".schloss"); if (schloss) schloss.textContent = "🔓";
+  st.classList.remove("aufschliessen"); void st.getBoundingClientRect(); st.classList.add("aufschliessen");
+  Ton.spiele("schloss");
+  setTimeout(() => { st.classList.remove("aufschliessen"); if (schloss) schloss.textContent = "🔒"; }, 1100);
 }
 function bergInfo(p) { $("#berg-info").textContent = `⭐ ${p} / ${bergZiel()}   ·   👑 ${S.trophaeen.kronen}`; }
 function bergAnsehen() {
@@ -2482,9 +2516,9 @@ function bergAnsehen() {
   if (S.knoepfeAnsagen) Sprache.sprich(CONFIG.stationen[stationIndexFuer(S.berg.punkte)].satz);
 }
 /* ---------- Stationen nochmal ansehen ----------
-   Erreichte Stationen spielen ihre Szene beim Antippen noch einmal ab.
-   Nach der ersten ganzen Bergtour sind alle Stationen frei. */
-function stationFrei(i) { return S.berg.touren > 0 || S.trophaeen.kronen > 0 || i <= stationIndexFuer(S.berg.punkte); }
+   Erreichte Stationen der laufenden Bergtour spielen ihre Szene beim Antippen noch einmal ab.
+   Jede neue Bergtour beginnt wieder mit Schlössern (Version 5). */
+function stationFrei(i) { return i <= stationIndexFuer(S.berg.punkte); }
 let stationSpieltGerade = false;
 function stationenAntippbar(svg) {
   if (!svg) return;
@@ -2511,11 +2545,12 @@ function animiereReiter(svg, von, bis) {
     const dauer = WENIG_BEWEGUNG ? 50 : Math.max(900, Math.min(3200, (bis - von) * 700));
     const reiter = svg.querySelector(".reiter .einhorn");
     einhornAnim(reiter, "galopp");
+    svg.dataset.animiert = "1";
     const t0 = performance.now();
     const schritt = (t) => {
       const a = Math.min(1, (t - t0) / dauer), e = a < .5 ? 2 * a * a : 1 - Math.pow(-2 * a + 2, 2) / 2;
       bergReiterSetzen(svg, von + (bis - von) * e);
-      if (a < 1) requestAnimationFrame(schritt); else { einhornAnim(reiter, null); res(); }
+      if (a < 1) requestAnimationFrame(schritt); else { einhornAnim(reiter, null); svg.dataset.animiert = ""; res(); }
     };
     requestAnimationFrame(schritt);
   });
@@ -2665,6 +2700,8 @@ async function bergNachRunde(alt, plus, krone) {
     const sp = CONFIG.stationen[i].punkte;
     if (sp > alt && sp <= ende) {
       await animiereReiter(svg, p, sp); p = sp; bergInfo(p);
+      // Das Schloss springt gerade auf – kurz zuschauen lassen, dann die Szene
+      await warte(WENIG_BEWEGUNG ? 300 : 1150);
       const st = svg.querySelector(`.station[data-i="${i}"]`); if (st) { st.classList.add("puls"); }
       if (i === CONFIG.stationen.length - 1) await zielFeiern(); else await stationFeiern(i);
     }
@@ -2725,7 +2762,7 @@ function reglerHTML(id, wert, min, max, schritt) {
 }
 const EINST_SEITEN = [
   { id: "spiel", icon: "🎮", titel: "Spiel", text: "Einhorn & Kind, Spracherkennung, Ansagen" },
-  { id: "sounds", icon: "🔊", titel: "Sounds & Stimmen", text: "Vorlesestimmen mit Hörprobe, Töne, Musik" },
+  { id: "sounds", icon: "🔊", titel: "Sounds & Stimmen", text: "Je 3 Vorlesestimmen mit Hörprobe, Töne, Musik" },
   { id: "bibliothek", icon: "📚", titel: "Bibliothek", text: "Inhaltsdateien, alle Karten, Fotos, neue Karten" },
   { id: "fortschritt", icon: "⛰️", titel: "Fortschritt", text: "Berg, Einhorntraining, Trophäen" },
   { id: "sichern", icon: "💾", titel: "Sichern & Neu anfangen", text: "Sicherung, Einhorn neu kennenlernen, alles zurücksetzen" }
@@ -2761,7 +2798,8 @@ function einstSpiel(box) {
   const st = srStatus();
   box.innerHTML = `
   <div class="abschnitt"><h3>🦄 Einhorn &amp; Kind</h3>
-    <div class="reihe"><label class="titel-l" for="e-einhorn">Name des Einhorns</label><input class="feld" id="e-einhorn" maxlength="16" value="${esc(S.einhornName)}"></div>
+    <div class="reihe"><label class="titel-l" for="e-einhorn">Name des Einhorns</label><select class="feld" id="e-einhorn">${namensListe().map((n) => `<option ${n === S.einhornName ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div>
+    <p class="info">Zur Auswahl stehen nur die Namen, die mit allen Stimmen aufgenommen sind (einstellungen.js › namensVorschlaege).</p>
     <div class="reihe"><label class="titel-l" for="e-kind">Name des Kindes (optional, für „My name is …“)</label><input class="feld" id="e-kind" maxlength="20" value="${esc(S.kindName)}"></div>
     <div class="reihe"><button class="e-knopf" id="e-kennenlernen">🦄 Einhorn neu kennenlernen</button><span class="info">Die Namensgebung vom ersten Start noch einmal erleben. Spielstand und Einstellungen bleiben.</span></div>
   </div>
@@ -2777,7 +2815,7 @@ function einstSpiel(box) {
     <div class="reihe"><label class="titel-l" for="e-ansage">Knöpfe sagen beim Antippen, was sie tun</label>${schalterHTML("e-ansage", S.knoepfeAnsagen)}</div>
     <p class="info">Ausgeschaltet (empfohlen) klingen Menü-Knöpfe, Trophäen und der Berg nur mit dezenten Harfentönen. Im Spiel liest die App weiter die Bildwörter und englischen Wörter vor.</p>
   </div>`;
-  $("#e-einhorn").onchange = (e) => { const n = e.target.value.trim(); if (n) { S.einhornName = n; speichere(); } else e.target.value = S.einhornName; };
+  $("#e-einhorn").onchange = (e) => { const n = gueltigerName(e.target.value); if (n) { S.einhornName = n; speichere(); entsperren(); Sprache.stop(); Sprache.sprich(ersetze("Ich bin {einhorn}!")); } };
   $("#e-kind").onchange = (e) => { S.kindName = e.target.value.trim(); speichere(); };
   $("#e-kennenlernen").onclick = einhornNeuKennenlernen;
   $("#e-sr").onchange = (e) => { S.spracherkennung = e.target.checked; speichere(); };
@@ -2803,60 +2841,42 @@ function stimmenInfo(v) {
   const m = /markus|martin|yannick|viktor|daniel|arthur|oliver|alex|tom\b|aaron|fred|rocko|eddy|reed|grandpa|ralph|albert|jamie/.test(n);
   return { q, g: w ? "weiblich" : m ? "männlich" : "" };
 }
-const QUALI_TEXT = { premium: "⭐ Premium", erweitert: "✨ Erweitert", standard: "Standard", roboter: "🤖 klingt künstlich" };
 function einstSounds(box) {
-  const stimmBlock = (sp, titel) => `
-    <div class="reihe"><label class="titel-l" for="e-stimme-${sp}">${titel}</label><select class="feld" id="e-stimme-${sp}"></select><button class="e-knopf" id="e-probe-${sp}">▶︎ Hörprobe</button></div>
-    <div class="reihe"><label class="titel-l" for="e-tempo-${sp}">Tempo</label>${reglerHTML("e-tempo-" + sp, sp === "de" ? S.stimmeDeTempo : S.stimmeEnTempo, 0.7, 1.25, 0.05)}</div>
-    <div class="reihe"><label class="titel-l" for="e-hoehe-${sp}">Stimmhöhe</label>${reglerHTML("e-hoehe-" + sp, sp === "de" ? S.stimmeDeHoehe : S.stimmeEnHoehe, 0.8, 1.4, 0.05)}</div>`;
-  const aufnahmeBlock = (sp) => {
-    const l = Aufnahmen.vonSprache(sp); if (!l.length) return "";
-    const w = (sp === "en" ? S.aufnahmeEn : S.aufnahmeDe), aktiv = Aufnahmen.gewaehlt(sp);
-    const zeile = (wert, titel, info, an, probe) => `<div class="reihe aufn-reihe"><label class="aufn-wahl"><input type="radio" name="aufn-${sp}" value="${esc(wert)}" ${an ? "checked" : ""}><span><b>${esc(titel)}</b>${info ? ` <span class="info">${esc(info)}</span>` : ""}</span></label>${probe ? `<button class="e-knopf" data-aprobe="${esc(wert)}">▶︎ Hörprobe</button>` : ""}</div>`;
-    return `<p class="info">Aufgenommene Stimmen (klingen natürlicher, funktionieren offline):</p>`
-      + l.map((v) => zeile(v.id, v.name, v.info || "", aktiv && aktiv.id === v.id, true)).join("")
-      + zeile("ipad", "Nur iPad-Stimme", "", w === "ipad", false)
-      + `<p class="info">Alles, was nicht aufgenommen ist (neue Wörter, andere Namen), spricht die iPad-Stimme unten.</p>`;
+  // Nur die aufgenommenen Stimmen (je Sprache drei). Die iPad-Stimme springt unsichtbar ein,
+  // wo es keine Aufnahme gibt (selbst angelegte Karten, „My name is …“).
+  const block = (sp) => {
+    const l = Aufnahmen.vonSprache(sp), aktiv = Aufnahmen.gewaehlt(sp);
+    if (!l.length) return `<p class="status warn">⚠️ Die Stimmen werden noch geladen. Beim ersten Öffnen braucht die App dafür Internet.</p>`;
+    return l.map((v) => `<div class="reihe aufn-reihe"><label class="aufn-wahl"><input type="radio" name="aufn-${sp}" value="${esc(v.id)}" ${aktiv && aktiv.id === v.id ? "checked" : ""}><span><b>${esc(v.name)}</b>${v.info ? ` <span class="info">${esc(v.info)}</span>` : ""}</span></label><button class="e-knopf" data-aprobe="${esc(v.id)}">▶︎ Hörprobe</button></div>`).join("");
   };
-  const ipadTitel = (sp) => Aufnahmen.vonSprache(sp).length ? "iPad-Stimme (Ersatz)" : (sp === "en" ? "Stimme (britisch zuerst)" : "Stimme");
   box.innerHTML = `
-  <div class="abschnitt"><h3>🇩🇪 Deutsche Vorlesestimme</h3>${aufnahmeBlock("de")}${stimmBlock("de", ipadTitel("de"))}</div>
-  <div class="abschnitt"><h3>🇬🇧 Englische Vorlesestimme</h3>${aufnahmeBlock("en")}${stimmBlock("en", ipadTitel("en"))}</div>
-  <div class="abschnitt"><h3>💡 Tipps zu den Stimmen</h3>
-    <p class="info">Die aufgenommenen Stimmen sind freie KI-Stimmen, die mit der App mitgeliefert werden (Dateien stimmen.json und stimme-….bin). Tempo und Stimmhöhe gelten nur für die iPad-Stimme.</p>
-    <p class="info">Safari kann auf dem iPad nur die vorinstallierten Apple-Stimmen benutzen; nachgeladene „Erweitert“- oder „Premium“-Stimmen sind für Web-Apps gesperrt (Einschränkung von Apple). Für die iPad-Stimme am besten „Automatisch“ wählen, alles mit „🤖“ meiden und Stimmhöhe bei 1,0 lassen.</p>
-    <div class="reihe"><button class="e-knopf" id="e-stimme-standard">↺ Tempo und Stimmhöhe auf Standard</button></div>
+  <div class="abschnitt"><h3>🇩🇪 Deutsche Stimme</h3>${block("de")}</div>
+  <div class="abschnitt"><h3>🇬🇧 Englische Stimme (britisch)</h3>${block("en")}</div>
+  <div class="abschnitt"><h3>💡 Zu den Stimmen</h3>
+    <p class="info">Alle sechs sind freie KI-Stimmen, die jedes Wort, jeden Satz und alles, was das Einhorn sagt, fertig aufgenommen mitbringen. Sie klingen auf jedem Gerät gleich und funktionieren offline.</p>
+    <p class="info">Nur was nicht aufgenommen ist – selbst angelegte Karten und „My name is …“ mit dem Namen des Kindes – liest die eingebaute iPad-Stimme vor.</p>
   </div>
   <div class="abschnitt"><h3>🎵 Töne &amp; Musik</h3>
     <div class="reihe"><label class="titel-l" for="e-toene">Töne, Melodien und Harfe</label>${schalterHTML("e-toene", S.toene)}</div>
     <div class="reihe"><span class="titel-l">Hörproben</span><button class="e-knopf" data-probe="jingle">🔔 Start-Jingle</button><button class="e-knopf" data-probe="harfe">✨ Harfe</button><button class="e-knopf" data-probe="gold">🥇 Belohnung</button><button class="e-knopf" data-probe="station">⛰️ Station</button></div>
     <div class="reihe"><label class="titel-l" for="e-musik">Sanfte Hintergrundmelodie</label>${schalterHTML("e-musik", S.musik)}</div>
   </div>`;
-  stimmenListenFuellen();
+  const probe = (v) => {
+    const texte = v.sprache === "en" ? [v.probe, "Hello! I am hungry. Water, please!"] : [ersetze("Hallo, ich bin {einhorn}!"), v.probe, "Affe"];
+    const t = texte.filter(Boolean).find((x) => Aufnahmen.eintrag(v, x));
+    if (!t) return;
+    Aufnahmen.spiele(v.sprache, t, {}, v).then((ok) => { if (!ok) hinweis("Die Stimme wird noch geladen – gleich nochmal tippen."); });
+  };
   $$('input[name^="aufn-"]', box).forEach((r) => r.onchange = () => {
     const sp = r.name === "aufn-en" ? "en" : "de";
     if (sp === "en") S.aufnahmeEn = r.value; else S.aufnahmeDe = r.value;
-    speichere(); const v = Aufnahmen.gewaehlt(sp); if (v) Aufnahmen.paket(v);
+    speichere();
+    const v = Aufnahmen.gewaehlt(sp); if (v) { Aufnahmen.paket(v); entsperren(); Sprache.stop(); probe(v); }
   });
   $$("[data-aprobe]", box).forEach((b) => b.onclick = () => {
     entsperren(); Sprache.stop();
-    const v = Aufnahmen.liste.find((x) => x.id === b.dataset.aprobe); if (!v) return;
-    const texte = [v.probe, ersetze((CONFIG.einhornSaetze || [])[0] || ""), "Affe", "Hello! I am hungry."].filter(Boolean);
-    const t = texte.find((x) => Aufnahmen.eintrag(v, x));
-    if (t) Aufnahmen.spiele(v.sprache, t, {}, v).then((ok) => { if (!ok) hinweis("Die Stimme wird noch geladen – gleich nochmal tippen."); });
+    const v = Aufnahmen.liste.find((x) => x.id === b.dataset.aprobe); if (v) probe(v);
   });
-  $("#e-stimme-de").onchange = (e) => { S.stimmeDe = e.target.value; speichere(); };
-  $("#e-stimme-en").onchange = (e) => { S.stimmeEn = e.target.value; speichere(); };
-  const probeDe = () => { entsperren(); Sprache.stop(); Sprache.sprichIpad(ersetze("Hallo! Ich bin {einhorn}. Maus, Mond und Milch.")); };
-  const probeEn = () => { entsperren(); Sprache.stop(); Sprache.sprichIpad("Hello! I am hungry. Water, please!", { sprache: "en", tempo: CONFIG.tempo.enSatz }); };
-  $("#e-probe-de").onclick = probeDe; $("#e-probe-en").onclick = probeEn;
-  const regler = (id, key, probe) => { const r = $(id); r.onchange = () => { S[key] = parseFloat(r.value); speichere(); probe(); }; };
-  regler("#e-tempo-de", "stimmeDeTempo", probeDe); regler("#e-hoehe-de", "stimmeDeHoehe", probeDe);
-  regler("#e-tempo-en", "stimmeEnTempo", probeEn); regler("#e-hoehe-en", "stimmeEnHoehe", probeEn);
-  $("#e-stimme-standard").onclick = () => {
-    S.stimmeDeTempo = 1; S.stimmeEnTempo = 1; S.stimmeDeHoehe = CONFIG.stimmhoehe; S.stimmeEnHoehe = CONFIG.stimmhoehe;
-    speichere(); einstellungenZeichnen("sounds"); probeDe();
-  };
   $$("[data-probe]", box).forEach((b) => b.onclick = () => {
     entsperren(); Sprache.stop(); Ton.melodienStopp();
     const name = b.dataset.probe;
@@ -2864,19 +2884,6 @@ function einstSounds(box) {
   });
   $("#e-toene").onchange = (e) => { S.toene = e.target.checked; speichere(); if (S.toene) { entsperren(); Ton.spiele("richtig"); } };
   $("#e-musik").onchange = (e) => { S.musik = e.target.checked; speichere(); if (S.musik) { entsperren(); Ton.musikStart(); } else Ton.musikStop(); };
-}
-function stimmenListenFuellen() {
-  const fuelle = (sel, sp, gewaehlt) => {
-    if (!sel) return;
-    const liste = Sprache.liste(sp);
-    const gut = liste.filter((v) => stimmenInfo(v).q !== "roboter"), roboter = liste.filter((v) => stimmenInfo(v).q === "roboter");
-    const opt = (v) => { const i = stimmenInfo(v); return `<option value="${esc(v.voiceURI)}" ${gewaehlt === v.voiceURI ? "selected" : ""}>${esc(v.name)}${i.g ? " (" + i.g + ")" : ""} – ${QUALI_TEXT[i.q]} · ${esc(v.lang)}</option>`; };
-    sel.innerHTML = `<option value="" ${!gewaehlt ? "selected" : ""}>Automatisch (empfohlen)</option>`
-      + (gut.length ? `<optgroup label="Stimmen">${gut.map(opt).join("")}</optgroup>` : "")
-      + (roboter.length ? `<optgroup label="Spaßstimmen (klingen künstlich)">${roboter.map(opt).join("")}</optgroup>` : "");
-  };
-  fuelle($("#e-stimme-de"), "de", S.stimmeDe);
-  fuelle($("#e-stimme-en"), "en", S.stimmeEn);
 }
 
 /* ---------- Bibliothek ---------- */
@@ -3148,10 +3155,20 @@ function init() {
   // Audio/Sprache beim ersten Tipp freischalten (iOS). Auf dem Startbildschirm erklingt dabei
   // der Start-Jingle – iOS erlaubt Töne erst nach dem ersten Tipp.
   let harfeAuslassen = false;   // dieser Tipp hat schon den Start-Jingle ausgelöst
-  document.addEventListener("pointerdown", () => {
+  document.addEventListener("pointerdown", (e) => {
     entsperren(); harfeAuslassen = false;
-    if (!jingleGespielt && aktuellerScreen === "s-start") { startJingle(); harfeAuslassen = true; }
+    if (!jingleGespielt && aktuellerScreen === "s-start") {
+      // Erster Tipp direkt aufs Einhorn: kein Jingle – das Einhorn stellt sich sofort vor
+      if (e.target.closest && e.target.closest("#start-einhorn .einhorn")) jingleGespielt = true;
+      else { startJingle(); harfeAuslassen = true; }
+    }
   }, true);
+  // iOS gibt Ton und Sprache manchmal erst bei „Finger hoch“ frei – darum auch hier entsperren
+  let spracheFrei = false;
+  ["touchend", "click"].forEach((t) => document.addEventListener(t, () => {
+    entsperren();
+    if (!spracheFrei) { spracheFrei = true; Sprache.entsperren(); }
+  }, { capture: true, passive: true }));
   // Menü-Knöpfe: dezente Harfentöne – oder, falls eingeschaltet, eine kurze Ansage
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-say], [data-harfe]");
@@ -3175,9 +3192,32 @@ function init() {
   });
   window.addEventListener("pagehide", speichere);
   if (TESTMODUS) testmodusEinrichten();
-  if (!S.einhornName) introStart(); else { zeige("s-start"); startZeichnen(); }
+  // Namen gibt es nur noch aus den Vorschlägen: ein frei eingetippter Name aus älteren Versionen
+  // führt einmal durch die Namensgebung (Spielstand bleibt)
+  const name = gueltigerName(S.einhornName);
+  if (name && name !== S.einhornName) { S.einhornName = name; speichere(); }
+  if (!name) introStart(); else { zeige("s-start"); startZeichnen(); }
   if (window.INHALT_HINWEISE && INHALT_HINWEISE.length) setTimeout(() => hinweis("⚠️ In einer Inhaltsdatei steckt ein Fehler – Details unter Einstellungen › Bibliothek.", 6000), 900);
-  if ("serviceWorker" in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => { });
+  updatesEinrichten();
+}
+/* Neue App-Version: Der Service Worker holt sie im Hintergrund. Ist sie da, lädt sich die App
+   von selbst neu – aber nur im Hauptmenü, nie mitten in einer Runde. Beim Zurückkehren in die
+   App wird nach Updates geschaut (iPadOS schließt Web-Apps selten ganz). */
+let updateWartet = false;
+function updateAnwenden() {
+  if (!updateWartet || aktuellerScreen !== "s-start" || document.querySelector("#o-feier.aktiv, #o-frage.aktiv")) return;
+  updateWartet = false; speichere(); location.reload();
+}
+function updatesEinrichten() {
+  if (!("serviceWorker" in navigator) || !/^https?:/.test(location.protocol)) return;
+  let ersteInstallation = !navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (ersteInstallation) { ersteInstallation = false; return; }   // allererste Installation: nichts neu laden
+    updateWartet = true; updateAnwenden();
+  });
+  navigator.serviceWorker.register("sw.js").then((reg) => {
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reg.update().catch(() => { }); });
+  }).catch(() => { });
 }
 document.addEventListener("DOMContentLoaded", init);
 </script>

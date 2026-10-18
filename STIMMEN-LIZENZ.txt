@@ -1,29 +1,21 @@
-Einhorn-ABC – aufgenommene Stimmen
-==================================
+Einhorn-ABC – aufgenommene Stimmen (Version 5)
+==============================================
 
 Die Dateien stimme-….bin enthalten Aufnahmen, die mit freien Sprachmodellen
 offline erzeugt wurden (Werkzeug: sherpa-onnx). Sie sind für die private,
 nicht-kommerzielle Nutzung in dieser Lern-App gedacht.
 
-Dii (Deutsch, weiblich)
-  Modell: OpenVoiceOS pipertts_de-DE_dii
-  Quelle: https://huggingface.co/OpenVoiceOS/pipertts_de-DE_dii
-  Lizenz: Creative Commons Namensnennung – Nicht kommerziell – Weitergabe unter
-          gleichen Bedingungen 4.0 International (CC BY-NC-SA 4.0)
-          https://creativecommons.org/licenses/by-nc-sa/4.0/
-          Kommerzielle Nutzung ist nicht erlaubt.
+Sophie, Marie, Lena (Deutsch, weiblich) und Sophie (Englisch, weiblich)
+  Modell: Supertonic 3 von Supertone Inc. (Stimmen F5, F3, F1),
+          int8-Fassung aus dem sherpa-onnx-Projekt
+  Quelle: https://github.com/supertone-oss-archive/supertonic
+  Lizenz: Modell unter OpenRAIL-M (mit Nutzungsbeschränkungen gegen
+          schädliche Verwendung), Beispielcode unter MIT-Lizenz
 
-Thorsten (Deutsch, männlich)
-  Modell: Piper-Stimme de_DE-thorsten-high (Thorsten-Voice)
-  Quelle: https://github.com/thorstenMueller/Thorsten-Voice
-  Lizenz: CC0 (gemeinfrei)
-
-Isabella (Englisch, britisch, weiblich)
-  Modell: Kokoro-82M, Stimme bf_isabella
-  Quelle: https://huggingface.co/hexgrad/Kokoro-82M
+Isabella und Emma (Englisch, britisch, weiblich)
+  Modell: Kokoro-82M, Stimmen bf_isabella und bf_emma
+  Quelle: https://github.com/hexgrad/kokoro
   Lizenz: Apache License 2.0
 
-Cori (Englisch, britisch, weiblich)
-  Modell: Piper-Stimme en_GB-cori-high
-  Daten:  Aufnahmen von LibriVox (https://librivox.org), gemeinfrei
-  Lizenz: gemeinfrei (Public Domain)
+Die Namen Sophie, Marie und Lena sind frei gewählt; die Stimmen gehören zu
+keiner echten Person.

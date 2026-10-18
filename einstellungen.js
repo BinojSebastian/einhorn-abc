@@ -88,11 +88,11 @@ var CONFIG = {
   naechsteKarteMs: 1000,      // Pause nach „richtig“
   szeneDauerMs: 6500,         // Länge der Belohnungsszene (per Tipp überspringbar)
 
-  // Vorlesetempo (1 = normal). Sehr langsame Werte (unter ca. 0,8) lassen die Apple-Stimmen
-  // gedehnt und metallisch klingen – darum liegen die normalen Werte nah an 1.
+  // Vorlesetempo der iPad-Ersatzstimme (1 = normal) – nur für Texte ohne Aufnahme
+  // (selbst angelegte Karten). Die aufgenommenen Stimmen haben ihr Tempo schon eingebaut.
   // Nur der 🐌-Knopf im Spiel English spricht bewusst langsam.
   tempo: { de: 0.94, enWort: 0.9, enSatz: 0.85, enLangsam: 0.55, bildwort: 0.9 },
-  // Stimmhöhe (1 = natürlich). Höhere Werte klingen schnell künstlich.
+  // Stimmhöhe der iPad-Ersatzstimme (1 = natürlich). Höhere Werte klingen schnell künstlich.
   stimmhoehe: 1.0,
 
   // Lob – wird nur vorgelesen, wenn in den Einstellungen „Lob vorlesen“ an ist
@@ -100,7 +100,9 @@ var CONFIG = {
   lobEn: ["Well done!", "Great job!", "Super!", "Fantastic!", "{einhorn} is so proud!"],
   szenenLob: ["Toll geübt! {einhorn} ist so stolz auf dich!", "Super gemacht! {einhorn} freut sich riesig!", "Juhu! {einhorn} hat dich lieb!"],
 
-  // Vorschläge für den Einhorn-Namen beim ersten Start
+  // Namen für das Einhorn. Seit Version 5 kann das Kind nur aus diesen Namen wählen, denn
+  // nur sie sind mit allen sechs Stimmen aufgenommen. Ein neuer Name hier spricht zunächst
+  // die iPad-Stimme – für eine Aufnahme die Datei an Claude geben (siehe README).
   namensVorschlaege: ["Luna", "Stella", "Glitzer", "Rosalie", "Sternchen"],
 
   // ---------- Was das Einhorn sagt ----------

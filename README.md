@@ -2,12 +2,13 @@
 
 Lern-Web-App für Vorschulkinder (4–6 Jahre) mit zwei Spielen: **ABC** (Buchstaben, Laute, Silben) und **English** (Alltagswörter und kurze Sätze hören und nachsprechen). Ein Einhorn begleitet das Kind und steigt mit jeder Runde einen Berg hinauf.
 
-**Stand: Version 4.3**
-- **Einhorn spricht:** Ein Tipp aufs Einhorn im Hauptmenü – es hüpft und stellt sich vor („Ich bin Stella!“, mehrere Sätze im Wechsel).
-- **Neu anfangen:** Unter Einstellungen „Einhorn neu kennenlernen“ (Namensgebung noch einmal, alles andere bleibt) und „Alles zurücksetzen“ (wie neu installiert).
-- **Berg-Videos:** Erreichte Stationen auf dem Berg lassen sich antippen und spielen ihre Szene noch einmal ab. Noch nicht erreichte zeigen ein Schlösschen; nach der ersten Krone sind alle frei. Der Wald ist jetzt ein dichter Wald, das Feld hat eine eigene Szene.
-- **Eigene Inhaltsdateien:** Wörter, Übungen und Einstellungen stehen in `inhalte-abc.js`, `inhalte-english.js` und `einstellungen.js` und lassen sich direkt auf GitHub bearbeiten.
-- **Aufgenommene Stimmen:** natürlich klingende freie KI-Stimmen (Dii und Thorsten für Deutsch, Isabella und Cori für Englisch), offline nutzbar. Was nicht aufgenommen ist, spricht die iPad-Stimme.
+**Stand: Version 5.0**
+- **Neue Stimmen:** je drei weibliche, neu aufgenommene KI-Stimmen – Deutsch: Marie, Lena, Sophie; Englisch (britisch): Isabella, Emma, Sophie. Sie lesen alle Bildwörter, englischen Wörter und Sätze (auch langsam für 🐌) und alles, was das Einhorn sagt. Die iPad-Stimmen stehen nicht mehr zur Auswahl.
+- **Einhorn-Namen:** Das Kind wählt aus den fünf Namen Luna, Stella, Glitzer, Rosalie und Sternchen – genau diese sind mit allen Stimmen aufgenommen. Ein Tipp aufs Einhorn im Hauptmenü: es sagt sofort „Ich bin Stella!“ (ohne Jingle davor).
+- **Schlösser am Berg:** Jede Bergtour beginnt mit Schlössern an allen Stationen außer dem Feld – auf dem großen Berg und auf dem kleinen Berg im Hauptmenü. Erreicht das Einhorn eine Station, springt ihr Schloss auf, danach lässt sich ihre Szene antippen und noch einmal ansehen.
+- **Updates kommen von selbst an:** Ist eine neue Version hochgeladen, lädt sich die App beim nächsten Öffnen (bzw. sobald das Kind im Hauptmenü ist) einmal von selbst neu. Die Version steht unten in den Einstellungen.
+
+Seit Version 4.3 enthalten: Einhorn neu kennenlernen / Alles zurücksetzen, Berg-Szenen zum Wiederansehen, eigene Inhaltsdateien zum Bearbeiten auf GitHub.
 
 ## Dateien
 
@@ -35,7 +36,7 @@ Oben in jeder Datei steht, wie eine Karte aufgebaut ist, mit Beispiel. Wichtig: 
 
 **Tippfehler sind kein Drama:** Steckt ein Fehler in einer Datei, spielt die App mit der zuletzt funktionierenden Fassung weiter und zeigt kurz einen Hinweis. Unter **Einstellungen › Bibliothek › Inhaltsdateien** steht dann, in welcher Datei und Zeile der Fehler steckt. Fehlerhafte einzelne Karten werden übersprungen und dort ebenfalls aufgelistet.
 
-**Neue Wörter und die aufgenommenen Stimmen:** Neue oder geänderte Wörter spricht zunächst die iPad-Stimme. Für neue Aufnahmen die geänderten Inhaltsdateien an Claude geben und die Stimmenpakete neu erzeugen lassen; danach `stimmen.json` und die neuen `stimme-….bin` hochladen und die alten `stimme-….bin` löschen.
+**Neue Wörter und die aufgenommenen Stimmen:** Neue oder geänderte Wörter spricht zunächst die eingebaute iPad-Stimme. Für neue Aufnahmen die geänderten Inhaltsdateien an Claude geben und die Stimmenpakete neu erzeugen lassen; danach `stimmen.json` und die neuen `stimme-….bin` hochladen und die alten `stimme-….bin` löschen. Das gilt auch für neue Einhorn-Namen in `namensVorschlaege`.
 
 ## Auf GitHub Pages veröffentlichen
 
@@ -49,7 +50,7 @@ Oben in jeder Datei steht, wie eine Karte aufgebaut ist, mit Beispiel. Wichtig: 
 
 1. Vorher in der App **Einstellungen › Sichern & Neu anfangen › Sicherung erstellen**.
 2. Die neuen Dateien im Repository hochladen (gleiche Namen werden ersetzt) und **Commit changes** klicken. Nicht mehr gebrauchte Dateien (z. B. alte `stimme-….bin`) löschen.
-3. Auf dem Gerät die App einmal mit Internet öffnen, ganz schließen und wieder öffnen.
+3. Auf dem Gerät die App mit Internet öffnen. Seit Version 5 lädt sie sich nach einem Update von selbst einmal neu; falls nicht: App ganz schließen (vom unteren Rand hochwischen und die App nach oben wegschieben) und wieder öffnen. Unten in den Einstellungen steht, welche Version läuft.
 
 Spielstand, Einstellungen und eigene Karten bleiben dabei erhalten.
 
@@ -71,17 +72,20 @@ Einmal auf den Bildschirm tippen, damit Ton und Sprache freigeschaltet werden.
 
 Das Zahnrad öffnet eine Übersicht mit fünf Bereichen:
 
-- **Spiel**: Name des Einhorns und des Kindes, „Einhorn neu kennenlernen“, Spracherkennung mit Mikrofon-Test, Lob vorlesen, Knöpfe ansagen.
-- **Sounds & Stimmen**: aufgenommene Stimme wählen (mit Hörprobe) oder nur die iPad-Stimme; iPad-Stimme mit Tempo und Stimmhöhe; Töne und Musik.
+- **Spiel**: Name des Einhorns (Auswahl aus den Vorschlägen) und des Kindes, „Einhorn neu kennenlernen“, Spracherkennung mit Mikrofon-Test, Lob vorlesen, Knöpfe ansagen.
+- **Sounds & Stimmen**: je drei Stimmen für Deutsch und Englisch mit Hörprobe; Töne und Musik.
 - **Bibliothek**: Prüfung der Inhaltsdateien, alle Karten (ausblenden, eigene Fotos, Wort anhören) und neue Karten.
 - **Fortschritt**: Berg, Einhorntraining, Trophäen zurücksetzen.
 - **Sichern & Neu anfangen**: Sicherung erstellen und laden, Einhorn neu kennenlernen, alles zurücksetzen.
 
 ## Stimmen
 
-- **Aufgenommene Stimmen:** Dii und Thorsten (Deutsch), Isabella und Cori (britisches Englisch) – freie KI-Stimmen, die vorab alle Bildwörter, englischen Wörter und Sätze sowie die Sätze des Einhorns aufgenommen haben (auch langsam für den 🐌-Knopf). Sie funktionieren offline und klingen natürlicher als die iPad-Stimmen. Lizenzen in `STIMMEN-LIZENZ.txt`.
-- **Namen:** Sätze mit dem Einhorn-Namen sind für die fünf Namensvorschläge (Luna, Stella, Glitzer, Rosalie, Sternchen) aufgenommen. Bei einem anderen Namen und für „My name is …“ spricht die iPad-Stimme.
-- **iPad-Stimme:** Safari kann nur die vorinstallierten Apple-Stimmen benutzen; nachgeladene „Erweitert“- oder „Premium“-Stimmen sind für Web-Apps gesperrt (Einschränkung von Apple). Tempo und Stimmhöhe gelten nur für die iPad-Stimme.
+- **Sechs aufgenommene Stimmen** (alle weiblich, freie KI-Stimmen, offline erzeugt):
+  - Deutsch: **Marie** (klar und deutlich, voreingestellt), **Lena** (ruhig, etwas höher), **Sophie** (sanft und freundlich) – Modell Supertonic 3.
+  - Englisch, britisch: **Isabella** (voreingestellt) und **Emma** – Modell Kokoro; **Sophie** – Supertonic 3, dieselbe Stimme wie Sophie auf Deutsch.
+- Aufgenommen sind alle Bildwörter, englischen Wörter und Sätze (auch langsam für 🐌), die deutschen Bedeutungen, Lob, Stations- und Einhorn-Sätze mit den fünf Namen. Einzelwörter wurden im Satzzusammenhang („Das Wort heißt … Affe.“) erzeugt und herausgeschnitten, damit sie sicher deutsch klingen. Jede Aufnahme wurde mit einer Spracherkennung geprüft und bei Bedarf neu erzeugt.
+- **iPad-Stimme nur als Ersatz:** Was nicht aufgenommen ist – selbst angelegte Karten und „My name is …“ mit dem Namen des Kindes – liest die eingebaute iPad-Stimme vor (automatisch gewählt, ohne Einstellmöglichkeit).
+- Lizenzen in `STIMMEN-LIZENZ.txt`.
 
 ## Spracherkennung
 

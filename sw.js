@@ -6,12 +6,14 @@
      ohne dass CACHE_VERSION erhöht werden muss. Ohne Internet gilt die
      gespeicherte Fassung.
    - Bilder, Symbole und Stimmenpakete kommen zuerst aus dem Speicher.
+   - Seit Version 5: Kommt eine neue App-Version an, lädt sich die App von
+     selbst neu (sobald das Kind wieder im Hauptmenü ist).
    CACHE_VERSION nur bei einer neuen App-Version erhöhen. */
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
 const CACHE_NAME = "einhorn-abc-v" + CACHE_VERSION;
 const STIMMEN_CACHE = "einhorn-abc-stimmen";   // Stimmenpakete (bleiben über Versionen erhalten)
 const DATEIEN = ["./", "./index.html", "./einstellungen.js", "./inhalte-abc.js", "./inhalte-english.js",
-  "./manifest.webmanifest", "./icon-180.png", "./icon-512.png"];
+  "./stimmen.json", "./manifest.webmanifest", "./icon-180.png", "./icon-512.png"];
 const NETZ_ZUERST = /(\/|\.html|\.js|\.json|\.webmanifest)$/;
 const NETZ_WARTEN_MS = 4000;
 

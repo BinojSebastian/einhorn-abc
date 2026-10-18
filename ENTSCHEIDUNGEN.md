@@ -1,6 +1,6 @@
 # Einhorn-ABC – Entscheidungen
 
-Alle Festlegungen aus den Rückfragen, deinen Antworten und deinem Feedback (Stand: Version 4.3).
+Alle Festlegungen aus den Rückfragen, deinen Antworten und deinem Feedback (Stand: Version 5.0).
 
 ## Aus den Rückfragen (Antwort: „Alles okay“)
 
@@ -84,7 +84,20 @@ Alle Festlegungen aus den Rückfragen, deinen Antworten und deinem Feedback (Sta
 | Stimmen | Apple-Premium-Stimmen sind in Safari gesperrt. Deshalb aufgenommene freie KI-Stimmen, offline. Per Hörprobe gewählt: D3 Kerstin, D4 Dii, E2 Isabella, E6 Cori. Bei der Prüfung aller Aufnahmen mit einer Spracherkennung kamen Kerstins Einzelwörter verstümmelt heraus (zu kurz, kaum erkennbar); dafür kam Thorsten (D2) dazu, der bei Einzelwörtern am deutlichsten war. Ergebnis: Dii (voreingestellt) und Thorsten für Deutsch, Isabella (voreingestellt) und Cori für Englisch. Aufgenommen: alle Bildwörter, englischen Wörter und Sätze (auch langsam für 🐌), deutsche Bedeutungen, Lob, Stations- und Einhorn-Sätze mit den fünf Namensvorschlägen. Alles andere spricht die iPad-Stimme. Der Stumm-Modus des iPads wird für Töne und Aufnahmen übergangen. |
 | Version | 4.3 mit genau diesen Punkten. Anlaut-Detektiv und Memory bleiben für Version 5. |
 
-## Für Version 5 ausgewählt (nach dem Test von V4)
+## Aus deinem Feedback zu Version 4.3 (Version 5.0)
+
+| Thema | Entscheidung |
+|---|---|
+| Stimmen | Je drei **weibliche** Stimmen, neu mit freien KI-Modellen aufgenommen. Deutsch: Marie (voreingestellt), Lena, Sophie (Supertonic 3). Englisch nur **britisch**: Isabella (voreingestellt), Emma (Kokoro) und Sophie (Supertonic 3, dieselbe Stimme wie auf Deutsch). Nach deiner Hörprobe: Marie, Lena, Isabella und Emma „sehr gut“, Sophie bleibt als dritte Stimme. Dii, Thorsten und Cori entfallen. Ausgewählt aus 28 Kandidaten (Piper, Kokoro, Supertonic 3) nach Verständlichkeit (Spracherkennung), geschätzter Natürlichkeit (UTMOS) und – für Englisch – britischen Aussprachemerkmalen (kein amerikanisches r, kein „wadder“ für „water“). |
+| Einzelwörter | Supertonic spricht Einzelwörter allein oft englisch gefärbt („Spinne“ wie „spin“). Darum wird jedes Bildwort im Satz „Das Wort heißt … Affe.“ erzeugt und herausgeschnitten; jede Aufnahme wird mit einer Spracherkennung geprüft und bei Bedarf mit anderen Einstellungen neu erzeugt. |
+| iPad-Stimmen | Nicht mehr wählbar, Tempo- und Stimmhöhe-Regler entfallen. Die iPad-Stimme springt nur noch unsichtbar ein, wo es keine Aufnahme gibt (selbst angelegte Karten, „My name is …“). Gespeicherte Stimmen-Einstellungen werden einmalig zurückgesetzt. |
+| Einhorn-Name | **Nur die vorgegebenen Namen** (Luna, Stella, Glitzer, Rosalie, Sternchen) als große Knöpfe; ein Tipp spricht den Namen vor, ✓ bestätigt. Kein Eingabefeld, kein Mikrofon. In den Einstellungen eine Auswahlliste. Ein frei eingetippter Name aus einer älteren Version führt einmal durch die Namensgebung (Spielstand bleibt). |
+| Einhorn antippen | Sagt sofort einen Satz mit seinem Namen in der aufgenommenen Stimme. Ist der erste Tipp nach dem Öffnen direkt aufs Einhorn, entfällt der Start-Jingle davor. Ton und Sprache werden zusätzlich beim Loslassen des Fingers freigeschaltet (iPadOS verlangt das teilweise). Hängt das Abspielen einer Aufnahme, übernimmt nach spätestens 4 Sekunden die iPad-Stimme. |
+| Schlösser am Berg | **Jede Bergtour beginnt neu mit Schlössern** – auch nach der Krone. Gesperrte Stationen zeigen ein großes Schloss statt ihres Symbols, gestrichelt und blasser, auf dem großen Berg und auf dem kleinen Berg im Hauptmenü. Erreicht das Einhorn eine Station, springt das Schloss mit Klang auf und das Symbol erscheint; kurz danach kommt die Szene. Erreichte Stationen der laufenden Tour lassen sich antippen und spielen ihre Szene noch einmal. Getestet für alle sieben Stationen. |
+| Updates | Neue Versionen laden sich von selbst: Die App sucht beim Zurückkehren nach Updates und lädt neu, sobald das Kind im Hauptmenü ist (nie mitten in einer Runde). |
+| Version | 5.0 mit genau diesen Punkten. Anlaut-Detektiv und Memory kommen später. |
+
+## Für später vorgemerkt
 
 - **Anlaut-Detektiv:** Wort hören, aus 3 Buchstaben den Anfangsbuchstaben antippen – das Kind kann allein spielen.
 - **Memory:** Bild und Buchstabe bzw. Bild und englisches Wort als Paare finden.
